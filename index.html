@@ -3,329 +3,402 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YXA | لوحة التحكم واختبار Firebase</title>
-  <!-- تحميل مكتبة Tailwind CSS للتصميم العصري -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- تحميل خط Cairo العربي لوضوح وجمالية النصوص -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Cairo', 'sans-serif'],
-          }
-        }
-      }
+  <title>ط§ط®طھط¨ط§ط± ظ…ظ†طµط© YXA</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131a2a;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --demo: #0ea5e9;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #243049;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --err: #ef4444;
     }
-  </script>
+
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .box {
+      width: 100%;
+      max-width: 470px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+    }
+
+    h1, h2, p { margin: 0 0 12px; }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+
+    button {
+      border: 1px solid var(--border);
+      background: #1b253b;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { background: #263452; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      width: 100%;
+    }
+    .primary:hover { background: var(--accent-hover); }
+
+    .demo-btn {
+      background: rgba(14, 165, 233, 0.16);
+      border-color: rgba(14, 165, 233, 0.45);
+      color: #7dd3fc;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+    .demo-btn:hover { background: rgba(14, 165, 233, 0.25); }
+
+    input, textarea {
+      width: 100%;
+      background: #0e1422;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 12px;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+
+    .providers {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .alert {
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      display: none;
+      line-height: 1.5;
+    }
+    .alert.ok { display: block; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.45); color: #bbf7d0; }
+    .alert.warn { display: block; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.45); color: #fde68a; }
+    .alert.err { display: block; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.45); color: #fecaca; }
+
+    .hidden { display: none; }
+
+    .chat-log {
+      height: 260px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px;
+      background: #0d1320;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .msg {
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user { background: #273554; align-self: flex-start; max-width: 88%; }
+    .msg.ai { background: #162238; border: 1px solid #2b3f63; align-self: flex-end; max-width: 92%; }
+
+    .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+<body>
+  <div class="box">
+    <div id="envNotice" class="alert"></div>
+    <div id="statusBox" class="alert"></div>
 
-  <!-- الشريط العلوي (Header) -->
-  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-10">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-          <span class="font-extrabold text-xl tracking-wider text-white">YXA</span>
-        </div>
-        <div>
-          <h1 class="font-bold text-lg sm:text-xl text-white leading-tight">منصة YXA السحابية</h1>
-          <p class="text-xs text-slate-400">معرف المشروع: <span class="font-mono text-cyan-400">yxa1-9833a</span></p>
-        </div>
+    <!-- ط´ط§ط´ط© ط§ظ„ط§ط®طھط¨ط§ط± ظˆط§ظ„ط¯ط®ظˆظ„ -->
+    <section id="authSection">
+      <h1>ظ…ظ†طµط© YXA</h1>
+      <p class="muted">ط¬ط±ظ‘ط¨ ط§ظ„ظ…ظ†طµط© ظپظˆط±ط§ظ‹ ط¨ظˆط¶ط¹ ط§ظ„ط§ط®طھط¨ط§ط± ط£ظˆ ط³ط¬ظ„ ط¯ط®ظˆظ„ظƒ ط§ظ„ظپط¹ظ„ظٹ.</p>
+
+      <button type="button" id="quickTestBtn" class="demo-btn">
+        âڑ، طھط¬ط±ط¨ط© ظپظˆط±ظٹط© ظ„ظ„ظ…ظ†طµط© (ط¨ط¯ظˆظ† ظ…ظپط§طھظٹط­)
+      </button>
+
+      <form id="loginForm">
+        <input type="email" id="emailInput" placeholder="ط§ظ„ط¨ط±ظٹط¯ ط§ظ„ط¥ظ„ظƒطھط±ظˆظ†ظٹ" required />
+        <input type="password" id="passwordInput" placeholder="ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±" required />
+        <button type="submit" id="loginBtn" class="primary">طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„</button>
+      </form>
+
+      <div class="providers">
+        <button type="button" id="googleBtn">Google</button>
+        <button type="button" id="githubBtn">GitHub</button>
+        <button type="button" id="appleBtn">Apple</button>
       </div>
-
-      <!-- مؤشر حالة الاتصال المباشر بـ Firebase -->
-      <div id="connection-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/90 border border-slate-700 text-xs sm:text-sm">
-        <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-        <span id="status-text" class="text-slate-300 font-semibold">جاري التحقق من الاتصال...</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- المحتوى الرئيسي -->
-  <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 flex-grow space-y-6">
-
-    <!-- بطاقة الترحيب وحالة تهيئة SDK -->
-    <section class="bg-gradient-to-br from-slate-900 to-slate-900/50 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">تم دمج Firebase SDK بنجاح 🚀</h2>
-          <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-2xl">
-            هذه الصفحة جاهزة ومتصلة بإعدادات مشروعك <code class="text-indigo-400 bg-indigo-950/60 px-1.5 py-0.5 rounded">yxa1-9833a</code>. يمكنك الآن اختبار إرسال واستقبال البيانات الفورية من قاعدة بيانات Firestore.
-          </p>
-        </div>
-        <button id="test-ping-btn" class="shrink-0 px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-semibold text-sm border border-slate-700 transition flex items-center justify-center gap-2">
-          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-          </svg>
-          فحص تهيئة التطبيق
-        </button>
-      </div>
-
-      <!-- صندوق رسائل التنبيه والأخطاء التفاعلي -->
-      <div id="alert-box" class="hidden mt-5 p-4 rounded-xl border text-sm leading-relaxed"></div>
     </section>
 
-    <!-- قسم اختبار قاعدة البيانات (Firestore) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      
-      <!-- نموذج إضافة بيانات جديدة -->
-      <section class="lg:col-span-5 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg h-fit">
-        <h3 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
-          <span class="w-2 h-5 rounded-full bg-indigo-500"></span>
-          إرسال رسالة اختبار إلى Firestore
-        </h3>
-        <p class="text-xs text-slate-400 mb-5">سيتم حفظ البيانات في مجموعة باسم <code class="text-slate-300">yxa_messages</code></p>
-
-        <form id="data-form" class="space-y-4">
-          <div>
-            <label for="sender-name" class="block text-sm font-semibold text-slate-300 mb-1.5">الاسم أو العنوان</label>
-            <input type="text" id="sender-name" required placeholder="مثال: مدير النظام"
-              class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-sm" />
-          </div>
-
-          <div>
-            <label for="message-content" class="block text-sm font-semibold text-slate-300 mb-1.5">نص الرسالة أو البيانات</label>
-            <textarea id="message-content" rows="3" required placeholder="اكتب أي نص لتجربة الحفظ السحابي..."
-              class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-sm resize-none"></textarea>
-          </div>
-
-          <button type="submit" id="submit-btn"
-            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 active:scale-[0.99] text-white font-bold text-sm shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-2">
-            <span>حفظ في قاعدة البيانات</span>
-            <svg class="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-            </svg>
-          </button>
-        </form>
-      </section>
-
-      <!-- عرض البيانات المسترجعة لحظياً -->
-      <section class="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              <span class="w-2 h-5 rounded-full bg-cyan-500"></span>
-              السجلات المحفوظة (مزامنة حية)
-            </h3>
-            <p class="text-xs text-slate-400">تظهر هنا البيانات المخزنة في Firestore تلقائياً</p>
-          </div>
-          <span id="records-count" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs font-bold">0 سجلات</span>
+    <!-- ط´ط§ط´ط© ط§ظ„ط¹ظ…ظ„ ظˆط§ظ„طھط¬ط±ط¨ط© -->
+    <section id="appSection" class="hidden">
+      <div class="row" style="margin-bottom: 12px;">
+        <div>
+          <h2 id="welcomeTitle" style="margin:0;">ظ…ط±ط­ط¨ط§ظ‹ ط¨ظƒ</h2>
+          <span id="sessionMode" class="muted"></span>
         </div>
+        <button type="button" id="exitBtn">ط®ط±ظˆط¬</button>
+      </div>
 
-        <!-- حاوية قائمة السجلات -->
-        <div id="records-list" class="space-y-3 flex-grow max-h-[380px] overflow-y-auto pr-1">
-          <div class="text-center py-10 text-slate-500 text-sm border border-dashed border-slate-800 rounded-xl">
-            جاري الاتصال بقاعدة البيانات لجلب السجلات...
-          </div>
-        </div>
-      </section>
+      <div id="chatLog" class="chat-log">
+        <div class="msg ai">ط¬ط§ظ‡ط² ظ„ظ„ط§ط®طھط¨ط§ط±! ط§ظƒطھط¨ ط£ظٹ ط±ط³ط§ظ„ط© ظ‡ظ†ط§ ظ„طھط¬ط±ط¨ط© ط§ظ„ط±ط¯ ط§ظ„ظپظˆط±ظٹ.</div>
+      </div>
 
-    </div>
-  </main>
+      <form id="chatForm">
+        <textarea id="msgInput" rows="2" placeholder="ط§ظƒطھط¨ ط±ط³ط§ظ„طھظƒ ظ„ط§ط®طھط¨ط§ط± ط§ظ„ظ…ظ†طµط©..." required></textarea>
+        <button type="submit" id="sendBtn" class="primary">ط¥ط±ط³ط§ظ„</button>
+      </form>
+    </section>
+  </div>
 
-  <!-- التذييل (Footer) -->
-  <footer class="border-t border-slate-800/80 bg-slate-900/40 py-4 text-center text-xs text-slate-500">
-    تم البناء لـ <span class="text-slate-300 font-semibold">YXA</span> • متصل بخدمات Google Firebase
-  </footer>
-
-  <!-- كود Firebase SDK المدمج قبل وسم الإغلاق </body> -->
   <script type="module">
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-analytics.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
+      GoogleAuthProvider,
+      GithubAuthProvider,
+      OAuthProvider,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
-    // Your web app's Firebase configuration
+    // ط¶ط¹ ط¨ظٹط§ظ†ط§طھظƒ ط§ظ„ط­ظ‚ظٹظ‚ظٹط© ظ‡ظ†ط§ ط¹ظ†ط¯ ط§ظ„ط±ط¨ط· ط§ظ„ظپط¹ظ„ظٹ
     const firebaseConfig = {
-      apiKey: "AIzaSyDfDU6HT0mtAbiLlcuBXxrysTmHNI-rFEo",
-      authDomain: "yxa1-9833a.firebaseapp.com",
-      projectId: "yxa1-9833a",
-      storageBucket: "yxa1-9833a.firebasestorage.app",
-      messagingSenderId: "822764592315",
-      appId: "1:822764592315:web:12c11fc8ec855405cc1d9e",
-      measurementId: "G-HJLW4BRQC5"
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      appId: "YOUR_APP_ID"
     };
+    const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY";
+    const GEMINI_MODEL = "gemini-2.5-flash";
 
-    // مراجع عناصر واجهة المستخدم
-    const statusDot = document.getElementById('status-dot');
-    const statusText = document.getElementById('status-text');
-    const alertBox = document.getElementById('alert-box');
-    const dataForm = document.getElementById('data-form');
-    const submitBtn = document.getElementById('submit-btn');
-    const recordsList = document.getElementById('records-list');
-    const recordsCount = document.getElementById('records-count');
-    const testPingBtn = document.getElementById('test-ping-btn');
+    const hasRealFirebase = !firebaseConfig.apiKey.startsWith("YOUR_");
+    const hasRealGemini = !GEMINI_API_KEY.startsWith("YOUR_");
 
-    // دالة مساعدة لعرض التنبيهات بدلاً من alert()
-    function showAlert(title, message, type = 'info') {
-      alertBox.classList.remove('hidden', 'bg-emerald-950/60', 'border-emerald-800', 'text-emerald-200', 'bg-rose-950/60', 'border-rose-800', 'text-rose-200', 'bg-amber-950/60', 'border-amber-800', 'text-amber-200');
-      
-      if (type === 'success') {
-        alertBox.classList.add('bg-emerald-950/60', 'border-emerald-800', 'text-emerald-200');
-      } else if (type === 'error') {
-        alertBox.classList.add('bg-rose-950/60', 'border-rose-800', 'text-rose-200');
-      } else {
-        alertBox.classList.add('bg-amber-950/60', 'border-amber-800', 'text-amber-200');
-      }
-
-      alertBox.innerHTML = `<strong class="block font-bold mb-1">${title}</strong><span>${message}</span>`;
-    }
-
-    // تحديث شارة الحالة العلوية
-    function setConnectionStatus(state, text) {
-      statusDot.className = 'w-2.5 h-2.5 rounded-full';
-      if (state === 'connected') {
-        statusDot.classList.add('bg-emerald-400', 'shadow-[0_0_8px_#34d399]');
-        statusText.textContent = text || 'متصل بـ Firebase';
-        statusText.className = 'text-emerald-300 font-semibold';
-      } else if (state === 'warning') {
-        statusDot.classList.add('bg-amber-400');
-        statusText.textContent = text || 'SDK مهيأ (بانتظار تفعيل Firestore)';
-        statusText.className = 'text-amber-300 font-semibold';
-      } else {
-        statusDot.classList.add('bg-rose-500');
-        statusText.textContent = text || 'خطأ في الاتصال';
-        statusText.className = 'text-rose-300 font-semibold';
-      }
-    }
-
-    try {
-      // Initialize Firebase
+    let auth = null;
+    if (hasRealFirebase) {
       const app = initializeApp(firebaseConfig);
-      let analytics = null;
+      auth = getAuth(app);
+    }
+
+    const envNotice = document.getElementById("envNotice");
+    const statusBox = document.getElementById("statusBox");
+    const authSection = document.getElementById("authSection");
+    const appSection = document.getElementById("appSection");
+    const quickTestBtn = document.getElementById("quickTestBtn");
+    const loginForm = document.getElementById("loginForm");
+    const emailInput = document.getElementById("emailInput");
+    const passwordInput = document.getElementById("passwordInput");
+    const googleBtn = document.getElementById("googleBtn");
+    const githubBtn = document.getElementById("githubBtn");
+    const appleBtn = document.getElementById("appleBtn");
+    const exitBtn = document.getElementById("exitBtn");
+    const welcomeTitle = document.getElementById("welcomeTitle");
+    const sessionMode = document.getElementById("sessionMode");
+    const chatLog = document.getElementById("chatLog");
+    const chatForm = document.getElementById("chatForm");
+    const msgInput = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    let isDemoSession = false;
+    let activeController = null;
+    const chatHistory = [];
+
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
+    const isLocalFile = window.location.protocol === "file:" || window.location.protocol === "content:";
+
+    if (isLocalFile) {
+      envNotice.className = "alert warn";
+      envNotice.textContent = "ظ…ظ„ط§ط­ط¸ط©: ط£ظ†طھ طھظپطھط­ ط§ظ„ظ…ظ„ظپ ظ…ط­ظ„ظٹط§ظ‹. ظˆط¶ط¹ ط§ظ„طھط¬ط±ط¨ط© ط§ظ„ظپظˆط±ظٹط© ط´ط؛ط§ظ„ ظپظˆط±ط§ظ‹طŒ ط¨ظٹظ†ظ…ط§ ط¯ط®ظˆظ„ Google/GitHub/Apple ط§ظ„ظپط¹ظ„ظٹ ظٹط­طھط§ط¬ ط±ط§ط¨ط· http ط£ظˆ https ظ…ط¶ط§ظپ ظپظٹ Firebase.";
+    }
+
+    function showStatus(type, text) {
+      statusBox.className = `alert ${type}`;
+      statusBox.textContent = text;
+    }
+
+    function enterApp(title, modeText, demo = false) {
+      isDemoSession = demo;
+      welcomeTitle.textContent = title;
+      sessionMode.textContent = modeText;
+      authSection.classList.add("hidden");
+      appSection.classList.remove("hidden");
+    }
+
+    function leaveApp() {
+      if (activeController) activeController.abort();
+      isDemoSession = false;
+      appSection.classList.add("hidden");
+      authSection.classList.remove("hidden");
+    }
+
+    // ط²ط± طھط¬ط±ط¨ط© ظپظˆط±ظٹط© ظ„ط§ط®طھط¨ط§ط± ط§ظ„ظˆط§ط¬ظ‡ط© ظˆط§ظ„ظ…ط­ط§ط¯ط«ط© ظ…ط¨ط§ط´ط±ط©
+    quickTestBtn.addEventListener("click", () => {
+      showStatus("ok", "طھظ… طھظپط¹ظٹظ„ ظˆط¶ط¹ ط§ظ„ط§ط®طھط¨ط§ط± ط§ظ„ظپظˆط±ظٹ ط¨ظ†ط¬ط§ط­.");
+      enterApp("ظ…ط±ط­ط¨ط§ظ‹ ظپظٹ ظˆط¶ط¹ ط§ظ„طھط¬ط±ط¨ط©", "ط§ط®طھط¨ط§ط± ظ…ط­ظ„ظٹ ط³ط±ظٹط¹ â€¢ ط¨ط¯ظˆظ† ظ…ظپط§طھظٹط­", true);
+    });
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!hasRealFirebase || !auth) {
+        showStatus("warn", "ظ…ظپط§طھظٹط­ Firebase ط؛ظٹط± ظ…ط¶ط§ظپط© ط¨ط¹ط¯. ط§ط¶ط؛ط· (طھط¬ط±ط¨ط© ظپظˆط±ظٹط© ظ„ظ„ظ…ظ†طµط©) ظ„ظ„ط§ط®طھط¨ط§ط± ط§ظ„ط¢ظ†.");
+        return;
+      }
       try {
-        analytics = getAnalytics(app);
-      } catch (analyticsErr) {
-        console.warn("Analytics skipped in local/sandboxed environment:", analyticsErr);
+        await signInWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
+        showStatus("ok", "طھظ… طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„ ط¨ظ†ط¬ط§ط­.");
+      } catch (err) {
+        showStatus("err", `طھط¹ط°ط± ط§ظ„ط¯ط®ظˆظ„: ${err.code || err.message}`);
       }
-      
-      const db = getFirestore(app);
-      setConnectionStatus('connected', 'متصل بالمشروع (yxa1-9833a)');
+    });
 
-      // زر فحص التهيئة
-      testPingBtn.addEventListener('click', () => {
-        showAlert(
-          '✅ التهيئة سليمة 100%',
-          `تم التحقق من اتصال التطبيق بمعرف المشروع (${app.options.projectId}) ومعرف التطبيق (${app.options.appId}).`,
-          'success'
-        );
+    async function handleOAuth(provider) {
+      if (!hasRealFirebase || !auth) {
+        showStatus("warn", "ط£ط¶ظپ ظ…ظپط§طھظٹط­ Firebase ط£ظˆظ„ط§ظ‹طŒ ط£ظˆ ط§ط³طھط®ط¯ظ… ط²ط± ط§ظ„طھط¬ط±ط¨ط© ط§ظ„ظپظˆط±ظٹط©.");
+        return;
+      }
+      if (isLocalFile) {
+        showStatus("warn", "ط§ظپطھط­ ط§ظ„ظ…ظ†طµط© ظ…ظ† ط±ط§ط¨ط· http/https ظˆظ„ظٹط³ ظƒظ…ظ„ظپ ظ…ط­ظ„ظٹ.");
+        return;
+      }
+      try {
+        if (isMobile) {
+          await signInWithRedirect(auth, provider);
+        } else {
+          await signInWithPopup(auth, provider);
+        }
+      } catch (err) {
+        if (err?.code === "auth/cancelled-popup-request" || err?.code === "auth/popup-blocked") {
+          await signInWithRedirect(auth, provider);
+        } else {
+          showStatus("err", `ط®ط·ط£ ظپظٹ ط§ظ„ظ…ط²ظˆط¯: ${err.code || err.message}`);
+        }
+      }
+    }
+
+    googleBtn.addEventListener("click", () => handleOAuth(new GoogleAuthProvider()));
+    githubBtn.addEventListener("click", () => handleOAuth(new GithubAuthProvider()));
+    appleBtn.addEventListener("click", () => handleOAuth(new OAuthProvider("apple.com")));
+
+    exitBtn.addEventListener("click", async () => {
+      if (auth && !isDemoSession) {
+        await signOut(auth);
+      }
+      leaveApp();
+      showStatus("ok", "طھظ… ط§ظ„ط®ط±ظˆط¬ ظ…ظ† ط¬ظ„ط³ط© ط§ظ„ط§ط®طھط¨ط§ط±.");
+    });
+
+    if (auth) {
+      getRedirectResult(auth).catch(() => {});
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          enterApp(`ظ…ط±ط­ط¨ط§ظ‹ ${user.displayName || "ط¨ظƒ ظپظٹ YXA"}`, user.email || "ط­ط³ط§ط¨ Firebase", false);
+        } else if (!isDemoSession) {
+          leaveApp();
+        }
+      });
+    }
+
+    function appendBubble(role, text) {
+      const div = document.createElement("div");
+      div.className = `msg ${role}`;
+      div.textContent = text;
+      chatLog.appendChild(div);
+      requestAnimationFrame(() => {
+        chatLog.scrollTop = chatLog.scrollHeight;
+      });
+      return div;
+    }
+
+    async function getAiResponse(text) {
+      if (!hasRealGemini || isDemoSession) {
+        return `ط±ط¯ ط§ط®طھط¨ط§ط±ظٹ ظ…ظ† ظ…ظ†طµط© YXA: ط§ط³طھظ„ظ…طھ ط±ط³ط§ظ„طھظƒ "${text}" ظˆط§ظ„ظˆط§ط¬ظ‡ط© طھط¹ظ…ظ„ ط¨ط³ظ„ط§ط³ط©. ظˆط¹ظ†ط¯ ط¥ط¶ط§ظپط© ظ…ظپطھط§ط­ Gemini ط§ظ„ط­ظ‚ظٹظ‚ظٹ ط³طھط­طµظ„ ط¹ظ„ظ‰ ط±ط¯ظˆط¯ ط°ظƒط§ط، ط§طµط·ظ†ط§ط¹ظٹ ظ…ط¨ط§ط´ط±ط©.`;
+      }
+
+      if (activeController) activeController.abort();
+      activeController = new AbortController();
+      const timer = setTimeout(() => activeController.abort(), 20000);
+
+      chatHistory.push({ role: "user", parts: [{ text }] });
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: activeController.signal,
+        body: JSON.stringify({
+          contents: chatHistory.slice(-12),
+          generationConfig: { temperature: 0.6, maxOutputTokens: 1024 }
+        })
       });
 
-      // الاستماع الفوري للبيانات من مجموعة yxa_messages
-      const messagesRef = collection(db, 'yxa_messages');
-      const q = query(messagesRef, orderBy('createdAt', 'desc'));
+      clearTimeout(timer);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `HTTP ${res.status}`);
+      }
 
-      onSnapshot(q, (snapshot) => {
-        setConnectionStatus('connected', 'متصل ويزامن البيانات حياً');
-        recordsCount.textContent = `${snapshot.size} سجلات`;
+      const data = await res.json();
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "ظ„ظ… ظٹط±ط¯ ط§ظ„ظ†ظ…ظˆط°ط¬.";
+      chatHistory.push({ role: "model", parts: [{ text: reply }] });
+      return reply;
+    }
 
-        if (snapshot.empty) {
-          recordsList.innerHTML = `
-            <div class="text-center py-10 text-slate-400 text-sm border border-dashed border-slate-800 rounded-xl">
-              لا توجد سجلات محفوظة حتى الآن. أضف أول رسالة من النموذج المجاور!
-            </div>`;
-          return;
-        }
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = msgInput.value.trim();
+      if (!text) return;
 
-        recordsList.innerHTML = '';
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          const dateStr = data.createdAt?.toDate 
-            ? data.createdAt.toDate().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-            : 'الآن';
+      msgInput.value = "";
+      sendBtn.disabled = true;
+      appendBubble("user", text);
+      const replyBubble = appendBubble("ai", "ط¬ط§ط±ظٹ ط§ظ„ظ…ط¹ط§ظ„ط¬ط©...");
 
-          const item = document.createElement('div');
-          item.className = 'p-4 rounded-xl bg-slate-950/90 border border-slate-800/90 hover:border-slate-700 transition';
-          item.innerHTML = `
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="font-bold text-indigo-400 text-sm">${escapeHTML(data.name || 'مستخدم')}</span>
-              <span class="text-[11px] text-slate-500 font-mono">${dateStr}</span>
-            </div>
-            <p class="text-slate-200 text-sm leading-relaxed break-words">${escapeHTML(data.content || '')}</p>
-          `;
-          recordsList.appendChild(item);
+      try {
+        replyBubble.textContent = await getAiResponse(text);
+      } catch (err) {
+        replyBubble.textContent = err?.name === "AbortError"
+          ? "ط§ظ†طھظ‡طھ ظ…ظ‡ظ„ط© ط§ظ„ط·ظ„ط¨ ط£ظˆ طھظ… ط§ط³طھط¨ط¯ط§ظ„ظ‡."
+          : `طھط¹ط°ط± ط¥طھظ…ط§ظ… ط§ظ„ط·ظ„ط¨: ${err.message}`;
+      } finally {
+        sendBtn.disabled = false;
+        requestAnimationFrame(() => {
+          chatLog.scrollTop = chatLog.scrollHeight;
         });
-      }, (error) => {
-        console.error("Firestore Snapshot Error:", error);
-        handleFirestoreError(error);
-      });
-
-      // إرسال وحفظ البيانات عند إرسال النموذج
-      dataForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const nameInput = document.getElementById('sender-name');
-        const contentInput = document.getElementById('message-content');
-
-        const nameVal = nameInput.value.trim();
-        const contentVal = contentInput.value.trim();
-        if (!nameVal || !contentVal) return;
-
-        submitBtn.disabled = true;
-        submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
-
-        try {
-          await addDoc(messagesRef, {
-            name: nameVal,
-            content: contentVal,
-            createdAt: serverTimestamp()
-          });
-
-          nameInput.value = '';
-          contentInput.value = '';
-          showAlert('تم الحفظ بنجاح!', 'تمت إضافة السجل إلى قاعدة بيانات Firestore ومزامنته فوراً.', 'success');
-        } catch (error) {
-          console.error("AddDoc Error:", error);
-          handleFirestoreError(error);
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
-        }
-      });
-
-    } catch (initError) {
-      console.error("Firebase Init Error:", initError);
-      setConnectionStatus('error', 'فشل تهيئة Firebase');
-      showAlert('خطأ في تهيئة Firebase', initError.message, 'error');
-    }
-
-    // معالجة أخطاء Firestore الشائعة وتوجيه المستخدم بوضوح
-    function handleFirestoreError(error) {
-      setConnectionStatus('warning', 'Firestore غير مفعل أو محظور');
-      if (error.code === 'permission-denied') {
-        showAlert(
-          'تنبيه صلاحيات قاعدة البيانات (Permission Denied)',
-          'قاعدة بيانات Firestore مفعلة ولكن قواعد الأمان (Rules) تمنع القراءة أو الكتابة. اذهب إلى لوحة تحكم Firebase > Firestore Database > Rules واجعلها في وضع الاختبار (Test Mode).',
-          'warning'
-        );
-      } else if (error.code === 'unavailable' || error.message?.includes('not found') || error.code === 'failed-precondition') {
-        showAlert(
-          'قاعدة بيانات Firestore غير مفعلة بعد',
-          'تم ربط كود المشروع بنجاح! لتفعيل قاعدة البيانات: افتح لوحة تحكم Firebase -> اختر Build ثم Firestore Database -> اضغط Create database واختر Start in test mode.',
-          'warning'
-        );
-      } else {
-        showAlert(
-          'تنبيه من قاعدة البيانات',
-          `حدث خطأ أثناء الاتصال بـ Firestore: (${error.code || 'خطأ غير معروف'}). تأكد من إنشاء قاعدة البيانات في لوحة تحكم Firebase.`,
-          'error'
-        );
       }
-    }
-
-    // حماية النصوص المدخلة من XSS
-    function escapeHTML(str) {
-      return str.replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;'
-      }[tag]));
-    }
+    });
   </script>
 </body>
 </html>
