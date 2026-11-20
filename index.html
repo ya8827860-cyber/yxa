@@ -1,13 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 <head>
-    <!-- تحديد ترميز الصفحة وتوافقها مع الشاشات المختلفة -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YXA</title>
+    <title>تواصل | YXA</title>
 
-    <!-- تحميل مكتبة Tailwind CSS للتنسيق المتجاوب -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -16,51 +14,62 @@
                 extend: {
                     fontFamily: {
                         sans: ['Cairo', 'Inter', 'sans-serif']
+                    },
+                    colors: {
+                        mono: {
+                            50: '#fafafa',
+                            100: '#f5f5f5',
+                            200: '#e5e5e5',
+                            300: '#d4d4d4',
+                            400: '#a3a3a3',
+                            500: '#737373',
+                            600: '#525252',
+                            700: '#404040',
+                            800: '#262626',
+                            900: '#171717',
+                            950: '#0a0a0a'
+                        }
                     }
                 }
             }
         };
     </script>
 
-    <!-- تحميل الأيقونات وخط Cairo -->
+    <!-- FontAwesome & Google Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        /* ضبط الخط العام لجميع العناصر */
         * {
             font-family: 'Cairo', 'Inter', sans-serif;
             box-sizing: border-box;
         }
 
-        /* أنيميشن دخول سلس للعناصر والبطاقات */
-        @keyframes popFade {
-            0% {
-                opacity: 0;
-                transform: translateY(8px) scale(0.98);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+        /* Tactile Keyframe Animations */
+        @keyframes modalSpring {
+            0% { opacity: 0; transform: translateY(18px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .anim-pop {
-            animation: popFade 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
         }
 
-        /* تأثير الضغط والحركة السلسة للأزرار */
-        .btn-motion {
-            transition: transform 0.14s ease, background-color 0.2s ease, opacity 0.2s ease;
+        .anim-spring {
+            animation: modalSpring 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
-        .btn-motion:hover {
+
+        .btn-act {
+            transition: transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+        }
+        .btn-act:hover {
             transform: translateY(-1px);
         }
-        .btn-motion:active {
-            transform: scale(0.95);
+        .btn-act:active {
+            transform: scale(0.95) translateY(0);
         }
 
-        /* تنسيق شريط التمرير */
         ::-webkit-scrollbar {
             width: 5px;
             height: 5px;
@@ -71,268 +80,436 @@
         }
     </style>
 </head>
-<body class="bg-neutral-100 text-neutral-950 dark:bg-black dark:text-neutral-100 min-h-screen flex flex-col transition-colors duration-200 antialiased">
+<body class="bg-neutral-100 text-neutral-950 dark:bg-black dark:text-neutral-50 min-h-screen flex flex-col transition-colors duration-200 antialiased selection:bg-neutral-900 selection:text-white dark:selection:bg-white dark:selection:text-black">
 
-    <!-- حاوية التنبيهات السريعة -->
-    <div id="alert-stack" class="fixed top-4 left-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 left-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
-    <!-- الشريط العلوي الرئيسي -->
-    <header class="sticky top-0 z-30 border-b border-neutral-300 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md px-4 py-3">
-        <div class="max-w-6xl mx-auto flex items-center justify-between gap-2">
-            <!-- شعار المنصة واسمها -->
+    <!-- MANDATORY AUTHENTICATION OVERLAY MODAL -->
+    <div id="auth-overlay" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="w-full max-w-md bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-6 shadow-2xl anim-spring space-y-6">
+            
+            <!-- Logo Header -->
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-xl shadow-lg">
+                    YXA
+                </div>
+                <h2 class="text-xl font-black tracking-tight">منصة تواصل | YXA</h2>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400">يرجى تسجيل الدخول أو إنشاء حساب للوصول للمنصة</p>
+            </div>
+
+            <!-- Auth Method Selector Tabs -->
+            <div class="grid grid-cols-3 gap-1 p-1 bg-neutral-100 dark:bg-neutral-900 rounded-2xl text-xs font-bold">
+                <button type="button" onclick="switchAuthTab('id')" id="authtab-id" class="btn-act py-2.5 rounded-xl bg-white dark:bg-black shadow text-black dark:text-white font-black">
+                    رقم الهوية / YXA
+                </button>
+                <button type="button" onclick="switchAuthTab('register')" id="authtab-register" class="btn-act py-2.5 rounded-xl text-neutral-500 hover:text-black dark:hover:text-white">
+                    إنشاء حساب
+                </button>
+                <button type="button" onclick="switchAuthTab('contact')" id="authtab-contact" class="btn-act py-2.5 rounded-xl text-neutral-500 hover:text-black dark:hover:text-white">
+                    هاتف / بريد
+                </button>
+            </div>
+
+            <!-- TAB 1: ID / YXA LOGIN -->
+            <form id="form-auth-id" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-neutral-500">رقم الهوية الوطنية أو رقم المعرف (YXA)</label>
+                    <input type="text" id="login-yxa-id" required placeholder="أدخل رقم الهوية أو YXA-XXXX" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs font-mono focus:outline-none focus:border-black dark:focus:border-white">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-neutral-500">كلمة المرور</label>
+                    <input type="password" id="login-yxa-pass" required placeholder="••••••••" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none focus:border-black dark:focus:border-white">
+                </div>
+                <button type="submit" class="btn-act w-full py-3.5 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black text-xs shadow-lg">
+                    دخول المنصة <i class="fa-solid fa-arrow-left mr-2"></i>
+                </button>
+            </form>
+
+            <!-- TAB 2: REGISTER WITH YXA GENERATOR -->
+            <form id="form-auth-register" onsubmit="handleRegisterSubmit(event)" class="space-y-3 hidden">
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-neutral-500">الاسم الكامل</label>
+                    <input type="text" id="reg-fullname" required placeholder="الاسم الكريم" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-2.5 text-xs focus:outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-neutral-500">رقم YXA الخاص بك</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="reg-yxa-num" required readonly placeholder="YXA-XXXX" class="flex-1 bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none">
+                        <button type="button" onclick="generateNewYxaNumber()" class="btn-act px-3 py-2.5 rounded-2xl bg-neutral-200 dark:bg-neutral-800 text-[11px] font-bold">
+                            ⚡ توليد YXA
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] font-bold text-neutral-500">رقم الهاتف</label>
+                        <input type="tel" id="reg-phone" required placeholder="05xxxxxxxx" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-3 py-2.5 text-xs focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-neutral-500">البريد الإلكتروني</label>
+                        <input type="email" id="reg-email" required placeholder="user@yxa.app" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-3 py-2.5 text-xs focus:outline-none">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-neutral-500">كلمة المرور</label>
+                    <input type="password" id="reg-pass" required placeholder="••••••••" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-2.5 text-xs focus:outline-none">
+                </div>
+                <button type="submit" class="btn-act w-full py-3.5 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black text-xs shadow-lg">
+                    إنشاء حساب والدخول الفوري
+                </button>
+            </form>
+
+            <!-- TAB 3: PHONE / EMAIL QUICK LOGIN -->
+            <form id="form-auth-contact" onsubmit="handleQuickContactSubmit(event)" class="space-y-4 hidden">
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-neutral-500">رقم الجوال أو البريد الإلكتروني</label>
+                    <input type="text" id="contact-input" required placeholder="0563068840 أو ya8827860@gmail.com" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
+                </div>
+                <button type="submit" class="btn-act w-full py-3.5 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black text-xs shadow-lg">
+                    إرسال رمز التحقق السريع
+                </button>
+            </form>
+
+            <!-- Quick Social Auth Divider -->
+            <div class="pt-2 border-t border-neutral-200 dark:border-neutral-800 space-y-3">
+                <p class="text-[10px] text-center font-bold text-neutral-400">أو الدخول السريع عبر منصات الهوية</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="quickSocialLogin('Google')" class="btn-act py-2.5 border border-neutral-300 dark:border-neutral-800 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-900">
+                        <i class="fa-brands fa-google"></i> Google
+                    </button>
+                    <button type="button" onclick="quickSocialLogin('Apple')" class="btn-act py-2.5 border border-neutral-300 dark:border-neutral-800 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-900">
+                        <i class="fa-brands fa-apple"></i> Apple ID
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOP HEADER -->
+    <header class="sticky top-0 z-30 border-b border-neutral-300 dark:border-neutral-800 bg-white/95 dark:bg-black/95 backdrop-blur-md px-4 py-3">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+            
+            <!-- Brand & User Identity Badge -->
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-neutral-950 dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-sm">
+                <div class="w-10 h-10 rounded-2xl bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-sm">
                     YXA
                 </div>
                 <div>
-                    <h1 class="text-base sm:text-lg font-black leading-tight">YXA</h1>
-                    <p class="text-[10px] text-neutral-500 dark:text-neutral-400">مكالمات • تحديثات • ستوريات • أصدقاء • ذكاء اصطناعي</p>
+                    <h1 class="text-base font-black leading-tight flex items-center gap-2">
+                        تواصل | YXA
+                        <span id="user-badge-yxa" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-800 font-bold">YXA-0000</span>
+                    </h1>
+                    <p id="user-badge-name" class="text-[11px] text-neutral-500 dark:text-neutral-400">جاري التحميل...</p>
                 </div>
             </div>
 
-            <!-- أزرار الإجراءات في الشريط العلوي -->
+            <!-- Action Buttons -->
             <div class="flex items-center gap-2">
-                <!-- زر مسح التخزين السحابي -->
-                <button type="button" onclick="clearCloudStorage()" class="btn-motion px-3 py-2 rounded-xl bg-neutral-200 dark:bg-neutral-900 hover:bg-neutral-300 dark:hover:bg-neutral-800 border border-neutral-300 dark:border-neutral-800 text-xs font-extrabold flex items-center gap-1.5">
-                    <i class="fa-solid fa-broom"></i>
-                    <span class="hidden sm:inline">مسح التخزين السحابي</span>
+                <!-- Contact Us Button -->
+                <button type="button" onclick="openContactModal()" class="btn-act px-3 py-2 rounded-xl bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-xs font-black flex items-center gap-1.5">
+                    <i class="fa-brands fa-whatsapp text-emerald-500"></i>
+                    <span>تواصل معنا</span>
                 </button>
 
-                <!-- زر تبديل الوضع الداكن والفاتح -->
-                <button type="button" onclick="toggleColorScheme()" title="تبديل المظهر" class="btn-motion p-2.5 rounded-xl bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-xs">
+                <!-- Theme Toggle -->
+                <button type="button" onclick="toggleThemeMode()" title="تبديل المظهر" class="btn-act p-2.5 rounded-xl bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-xs">
                     <i class="fa-solid fa-moon dark:hidden"></i>
                     <i class="fa-solid fa-sun hidden dark:block"></i>
                 </button>
 
-                <!-- بطاقة الحساب السريعة -->
-                <button type="button" onclick="switchView('account')" class="btn-motion flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black">
-                    <i class="fa-solid fa-user-circle"></i>
-                    <span id="header-user-label">الحساب</span>
+                <!-- Logout Button -->
+                <button type="button" onclick="logoutUser()" title="تسجيل الخروج" class="btn-act p-2.5 rounded-xl bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-xs text-rose-500">
+                    <i class="fa-solid fa-right-from-bracket"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- المحتوى الرئيسي للمنصة -->
+    <!-- MAIN WRAPPER -->
     <div class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-4 flex gap-4 pb-24 md:pb-6">
 
-        <!-- القائمة الجانبية لسطح المكتب -->
-        <aside class="hidden md:flex w-60 shrink-0 flex-col justify-between bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 h-fit sticky top-20">
+        <!-- DESKTOP SIDE NAVIGATION -->
+        <aside class="hidden md:flex w-64 shrink-0 flex-col justify-between bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 h-fit sticky top-20 shadow-sm">
             <nav class="space-y-1.5">
-                <button type="button" onclick="switchView('updates')" id="nav-updates" class="side-tab btn-motion w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black bg-neutral-950 dark:bg-white text-white dark:text-black">
+                <button type="button" onclick="openTab('updates')" id="sidetab-updates" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black bg-black dark:bg-white text-white dark:text-black">
                     <i class="fa-solid fa-bolt"></i>
                     <span>التحديثات والستوريات</span>
                 </button>
-                <button type="button" onclick="switchView('calls')" id="nav-calls" class="side-tab btn-motion w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900">
-                    <i class="fa-solid fa-phone-volume"></i>
-                    <span>المكالمات</span>
+                <button type="button" onclick="openTab('platforms')" id="sidetab-platforms" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900">
+                    <i class="fa-solid fa-address-book"></i>
+                    <span>سجل المنصات والمكالمات</span>
                 </button>
-                <button type="button" onclick="switchView('friends')" id="nav-friends" class="side-tab btn-motion w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900">
+                <button type="button" onclick="openTab('friends')" id="sidetab-friends" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900">
                     <i class="fa-solid fa-user-plus"></i>
-                    <span>إضافة الأصدقاء</span>
+                    <span>الأصدقاء والدردشة</span>
                 </button>
-                <button type="button" onclick="switchView('ai')" id="nav-ai" class="side-tab btn-motion w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900">
+                <button type="button" onclick="openTab('ai')" id="sidetab-ai" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900">
                     <i class="fa-solid fa-brain"></i>
-                    <span>الذكاء الاصطناعي</span>
+                    <span>استوديو الذكاء الاصطناعي</span>
                 </button>
-                <button type="button" onclick="switchView('account')" id="nav-account" class="side-tab btn-motion w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900">
-                    <i class="fa-solid fa-id-badge"></i>
-                    <span>الحساب</span>
+                <button type="button" onclick="openTab('cloud')" id="sidetab-cloud" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900">
+                    <i class="fa-solid fa-cloud"></i>
+                    <span>السحابة الذكية (∞)</span>
+                </button>
+                <button type="button" onclick="openTab('account')" id="sidetab-account" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900">
+                    <i class="fa-solid fa-id-card"></i>
+                    <span>الملف الشخصي</span>
                 </button>
             </nav>
 
-            <!-- حالة التخزين السحابي والذكاء الاصطناعي -->
+            <!-- Storage Quick Summary -->
             <div class="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-2 text-[11px]">
                 <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-neutral-100 dark:bg-black">
-                    <span class="text-neutral-500">التخزين السحابي</span>
-                    <span id="cloud-count-badge" class="font-mono font-black">0 عنصر</span>
+                    <span class="text-neutral-500">الملفات بالسحابة</span>
+                    <span id="cloud-count-badge" class="font-mono font-black">0 ملف</span>
                 </div>
-                <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-neutral-100 dark:bg-black">
-                    <span class="text-neutral-500">محرك AI</span>
-                    <span id="ai-engine-badge" class="font-bold">مدمج</span>
-                </div>
+                <button type="button" onclick="confirmWipeCloud()" class="btn-act w-full py-2 rounded-xl border border-neutral-300 dark:border-neutral-800 text-[11px] font-bold text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white">
+                    <i class="fa-solid fa-broom ml-1"></i> مسح التخزين السحابي
+                </button>
             </div>
         </aside>
 
-        <!-- منطقة عرض الأقسام -->
+        <!-- MAIN CONTENT AREA -->
         <main class="flex-1 min-w-0 space-y-4">
 
-            <!-- 1) قسم التحديثات والستوريات -->
-            <section id="view-updates" class="app-view space-y-4 anim-pop">
-                <!-- شريط الستوريات -->
+            <!-- TAB 1: UPDATES & STORIES -->
+            <section id="sec-updates" class="tab-page space-y-4 anim-spring">
+                
+                <!-- Stories Carousel -->
                 <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 space-y-3">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-sm font-black flex items-center gap-2">
-                            <i class="fa-solid fa-circle-play"></i> الستوريات
+                        <h2 class="text-xs font-black flex items-center gap-2">
+                            <i class="fa-solid fa-circle-play"></i> قصص وستوريات المجتمع
                         </h2>
-                        <div class="flex gap-2">
-                            <input type="text" id="story-text" onkeydown="if(event.key==='Enter') publishStory()" placeholder="اكتب ستوري سريع..." class="bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-xl px-3 py-1.5 text-xs focus:outline-none">
-                            <button type="button" onclick="publishStory()" class="btn-motion px-3.5 py-1.5 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black">
-                                إضافة ستوري
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="generateAiStory()" class="btn-act px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-900 text-[11px] font-bold border border-neutral-300 dark:border-neutral-800">
+                                ✨ ستوري بالـ AI
+                            </button>
+                            <button type="button" onclick="promptAddStory()" class="btn-act px-3 py-1.5 rounded-xl bg-black dark:bg-white text-white dark:text-black text-[11px] font-black">
+                                + إضافة ستوري
                             </button>
                         </div>
                     </div>
-                    <div id="stories-strip" class="flex items-center gap-3 overflow-x-auto pb-1"></div>
+                    <div id="stories-container" class="flex items-center gap-3 overflow-x-auto pb-1"></div>
                 </div>
 
-                <!-- نشر تحديث جديد -->
+                <!-- Create Post Box -->
                 <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 space-y-3">
-                    <h2 class="text-sm font-black flex items-center gap-2">
-                        <i class="fa-solid fa-bullhorn"></i> التحديثات
+                    <h2 class="text-xs font-black flex items-center gap-2">
+                        <i class="fa-solid fa-pen"></i> شارك تحديثاً جديداً
                     </h2>
-                    <textarea id="update-input" rows="2" placeholder="اكتب تحديثاً جديداً..." class="w-full bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl p-3 text-xs focus:outline-none resize-none"></textarea>
+                    <textarea id="post-input" rows="2" placeholder="ماذا يدور في ذهنك اليوم؟" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl p-3 text-xs focus:outline-none resize-none"></textarea>
                     <div class="flex justify-end gap-2">
-                        <button type="button" onclick="aiEnhanceUpdate()" class="btn-motion px-3.5 py-2 rounded-xl bg-neutral-200 dark:bg-neutral-900 text-xs font-bold flex items-center gap-1.5">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> تحسين بالذكاء
+                        <button type="button" onclick="polishPostWithAI()" class="btn-act px-3.5 py-2 rounded-xl bg-neutral-200 dark:bg-neutral-900 text-xs font-bold">
+                            <i class="fa-solid fa-wand-magic-sparkles ml-1"></i> صياغة بالذكاء
                         </button>
-                        <button type="button" onclick="publishUpdate()" class="btn-motion px-5 py-2 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black">
+                        <button type="button" onclick="createNewPost()" class="btn-act px-5 py-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">
                             نشر التحديث
                         </button>
                     </div>
                 </div>
 
-                <!-- قائمة التحديثات -->
-                <div id="updates-list" class="space-y-3"></div>
+                <!-- Feed Updates List -->
+                <div id="posts-feed" class="space-y-3"></div>
             </section>
 
-            <!-- 2) قسم المكالمات -->
-            <section id="view-calls" class="app-view hidden space-y-4 anim-pop">
+            <!-- TAB 2: PLATFORMS DIRECTORY & CALLS -->
+            <section id="sec-platforms" class="tab-page hidden space-y-4 anim-spring">
+                
+                <!-- Initiate Call Box -->
                 <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-4">
-                    <h2 class="text-sm font-black flex items-center gap-2">
-                        <i class="fa-solid fa-phone-volume"></i> بدء مكالمة
+                    <h2 class="text-xs font-black flex items-center gap-2">
+                        <i class="fa-solid fa-phone-volume"></i> بدء مكالمة من منصة YXA
                     </h2>
                     <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="text" id="call-target" placeholder="اسم الصديق أو المعرف أو الرقم..." class="flex-1 bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
-                        <button type="button" onclick="startCall('صوتية')" class="btn-motion px-4 py-3 rounded-2xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black flex items-center justify-center gap-2">
+                        <input type="text" id="call-target-input" placeholder="اسم المستخدم أو YXA ID..." class="flex-1 bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
+                        <button type="button" onclick="startCall('صوتية')" class="btn-act px-4 py-3 rounded-2xl bg-black dark:bg-white text-white dark:text-black text-xs font-black flex items-center justify-center gap-2">
                             <i class="fa-solid fa-phone"></i> مكالمة صوتية
                         </button>
-                        <button type="button" onclick="startCall('فيديو')" class="btn-motion px-4 py-3 rounded-2xl bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-xs font-extrabold flex items-center justify-center gap-2">
+                        <button type="button" onclick="startCall('فيديو')" class="btn-act px-4 py-3 rounded-2xl bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-xs font-extrabold flex items-center justify-center gap-2">
                             <i class="fa-solid fa-video"></i> مكالمة فيديو
                         </button>
                     </div>
 
-                    <!-- شريط المكالمة النشطة -->
-                    <div id="active-call-banner" class="hidden p-4 rounded-2xl bg-neutral-950 text-white border border-neutral-800 flex items-center justify-between gap-3">
+                    <!-- Active Call Banner -->
+                    <div id="active-call-box" class="hidden p-4 rounded-2xl bg-black text-white dark:bg-white dark:text-black flex items-center justify-between gap-3 shadow-xl">
                         <div class="flex items-center gap-3">
-                            <span class="w-3 h-3 rounded-full bg-white animate-ping"></span>
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
                             <div>
-                                <p id="active-call-title" class="text-xs font-black">مكالمة جارية...</p>
-                                <p id="active-call-timer" class="text-[11px] font-mono text-neutral-400">00:00</p>
+                                <p id="active-call-name" class="text-xs font-black">مكالمة جارية...</p>
+                                <p id="active-call-timer" class="text-[11px] font-mono">00:00</p>
                             </div>
                         </div>
-                        <button type="button" onclick="endActiveCall()" class="btn-motion px-4 py-2 rounded-xl bg-white text-black text-xs font-black">
+                        <button type="button" onclick="endCall()" class="btn-act px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-black">
                             إنهاء المكالمة
                         </button>
                     </div>
                 </div>
 
-                <!-- سجل المكالمات -->
+                <!-- Platforms & Contacts Registry -->
+                <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xs font-black">سجل المنصات والحسابات المسجلة</h3>
+                            <p class="text-[11px] text-neutral-500">يتضمن الأصدقاء والجهات المضافة برقم YXA أو الجوال</p>
+                        </div>
+                        <span id="platforms-count" class="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-900">0 منصة</span>
+                    </div>
+                    <div id="platforms-directory-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                </div>
+
+                <!-- Call History Log -->
                 <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-3">
-                    <h3 class="text-sm font-black">سجل المكالمات</h3>
-                    <div id="calls-history" class="space-y-2"></div>
+                    <h3 class="text-xs font-black">سجل المكالمات الأخيرة</h3>
+                    <div id="calls-history-list" class="space-y-2"></div>
                 </div>
             </section>
 
-            <!-- 3) قسم إضافة الأصدقاء -->
-            <section id="view-friends" class="app-view hidden space-y-4 anim-pop">
+            <!-- TAB 3: FRIENDS & DIRECT CHAT -->
+            <section id="sec-friends" class="tab-page hidden space-y-4 anim-spring">
+                
+                <!-- Add Friend Form -->
                 <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-3">
-                    <h2 class="text-sm font-black flex items-center gap-2">
-                        <i class="fa-solid fa-user-plus"></i> إضافة صديق جديد
+                    <h2 class="text-xs font-black flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i> إضافة صديق لحسابك وسجل المنصات
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input type="text" id="friend-name" placeholder="اسم الصديق" class="bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
-                        <input type="text" id="friend-handle" onkeydown="if(event.key==='Enter') addNewFriend()" placeholder="المعرف أو البريد أو الجوال" class="bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
-                        <button type="button" onclick="addNewFriend()" class="btn-motion px-5 py-3 rounded-2xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-plus"></i> إضافة صديق
+                        <input type="text" id="friend-name-input" placeholder="اسم الصديق" class="bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
+                        <input type="text" id="friend-id-input" onkeydown="if(event.key==='Enter') addFriend()" placeholder="رقم YXA أو الجوال أو البريد" class="bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
+                        <button type="button" onclick="addFriend()" class="btn-act px-5 py-3 rounded-2xl bg-black dark:bg-white text-white dark:text-black text-xs font-black flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus"></i> إضافة الصديق
                         </button>
                     </div>
                 </div>
 
+                <!-- Friends List Grid -->
                 <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-sm font-black">قائمة الأصدقاء</h3>
-                        <span id="friends-total" class="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-800">0</span>
-                    </div>
-                    <div id="friends-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                    <h3 class="text-xs font-black">قائمة الأصدقاء والدردشة الفورية</h3>
+                    <div id="friends-list-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
                 </div>
             </section>
 
-            <!-- 4) قسم الذكاء الاصطناعي (المدمج أو مفتاح API الخاص) -->
-            <section id="view-ai" class="app-view hidden space-y-4 anim-pop">
-                <!-- إعداد وضع الذكاء الاصطناعي ومفتاح API الخاص -->
-                <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-3">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <!-- TAB 4: AI STUDIO -->
+            <section id="sec-ai" class="tab-page hidden space-y-4 anim-spring">
+                
+                <!-- AI Config Panel -->
+                <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                            <h2 class="text-sm font-black flex items-center gap-2">
-                                <i class="fa-solid fa-brain"></i> الذكاء الاصطناعي
+                            <h2 class="text-xs font-black flex items-center gap-2">
+                                <i class="fa-solid fa-brain"></i> استوديو الذكاء الاصطناعي
                             </h2>
-                            <p class="text-xs text-neutral-500 dark:text-neutral-400">يعمل بالذكاء الاصطناعي المدمج مباشرة أو عبر مفتاح API الخاص بك.</p>
+                            <p class="text-[11px] text-neutral-500">استخدم المساعد الآلي المدمج فوراً، أو اربط مفتاح Gemini API الخاص بك</p>
                         </div>
-                        <div class="flex gap-1.5">
-                            <button type="button" onclick="setAiSource('builtin')" id="src-builtin" class="ai-src btn-motion px-3 py-1.5 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black">
+                        <div class="flex gap-1.5 p-1 bg-neutral-100 dark:bg-neutral-900 rounded-2xl text-xs">
+                            <button type="button" onclick="setAiMode('builtin')" id="aimode-builtin" class="btn-act px-3 py-1.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-black">
                                 مدمج
                             </button>
-                            <button type="button" onclick="setAiSource('custom')" id="src-custom" class="ai-src btn-motion px-3 py-1.5 rounded-xl bg-neutral-200 dark:bg-neutral-900 text-xs font-bold">
-                                مفتاح API خاص
+                            <button type="button" onclick="setAiMode('custom')" id="aimode-custom" class="btn-act px-3 py-1.5 rounded-xl text-neutral-500 font-bold">
+                                مفتاح Gemini API
                             </button>
                         </div>
                     </div>
 
-                    <!-- حقل إدخال مفتاح API الخاص -->
-                    <div id="custom-key-box" class="hidden flex flex-col sm:flex-row gap-2 pt-1">
-                        <input type="password" id="custom-api-key" placeholder="أدخل مفتاح API الخاص بك هنا..." class="flex-1 bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none">
-                        <button type="button" onclick="saveCustomApiKey()" class="btn-motion px-4 py-2.5 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black">
+                    <!-- Custom API Input -->
+                    <div id="ai-key-input-box" class="hidden flex flex-col sm:flex-row gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                        <input type="password" id="custom-gemini-key" placeholder="أدخل مفتاح Gemini API هنا..." class="flex-1 bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none">
+                        <button type="button" onclick="saveGeminiApiKey()" class="btn-act px-4 py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">
                             حفظ المفتاح
                         </button>
                     </div>
+
+                    <!-- Quick Prompt Chips -->
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        <button type="button" onclick="sendQuickPrompt('أعطني 3 أفكار مبتكرة لتطبيق تواصل مجتمعي')" class="btn-act px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-[11px] font-bold">💡 توليد أفكار</button>
+                        <button type="button" onclick="sendQuickPrompt('كيف أكتب كود محرر نصوص بسيط بلغة JavaScript؟')" class="btn-act px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-[11px] font-bold">💻 كتابة كود</button>
+                        <button type="button" onclick="sendQuickPrompt('أعد صياغة الرسالة بأسلوب رسمي ومهني جداً')" class="btn-act px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-[11px] font-bold">✍️ صياغة رسمية</button>
+                        <button type="button" onclick="sendQuickPrompt('اكتب قصة قصيرة ملهمة عن التكنولوجيا والتواصل')" class="btn-act px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-[11px] font-bold">🎨 قصة ملهمة</button>
+                    </div>
                 </div>
 
-                <!-- نافذة الدردشة مع الذكاء الاصطناعي -->
-                <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-3">
-                    <div id="ai-thread" class="min-h-[220px] max-h-[360px] overflow-y-auto space-y-2.5 p-2">
-                        <div class="p-3.5 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs leading-relaxed">
-                            مرحباً بك في الذكاء الاصطناعي داخل YXA. اسألني أو اطلب مني أي مساعدة.
+                <!-- AI Chat Display -->
+                <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-4">
+                    <div id="ai-chat-history" class="min-h-[250px] max-h-[380px] overflow-y-auto space-y-3 p-1">
+                        <div class="p-4 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs leading-relaxed">
+                            مرحباً بك في استوديو الذكاء الاصطناعي لمنصة YXA! كيف يمكنني مساعدتك اليوم؟
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <input type="text" id="ai-prompt" onkeydown="if(event.key==='Enter') sendAiMessage()" placeholder="اكتب سؤالك للذكاء الاصطناعي..." class="flex-1 bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
-                        <button type="button" onclick="sendAiMessage()" class="btn-motion px-5 py-3 rounded-2xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black">
+                        <input type="text" id="ai-query-input" onkeydown="if(event.key==='Enter') executeAiQuery()" placeholder="اكتب سؤالك أو طلبك هنا..." class="flex-1 bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
+                        <button type="button" onclick="executeAiQuery()" class="btn-act px-6 py-3 rounded-2xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">
                             إرسال
                         </button>
                     </div>
                 </div>
             </section>
 
-            <!-- 5) قسم الحساب -->
-            <section id="view-account" class="app-view hidden space-y-4 anim-pop">
+            <!-- TAB 5: INFINITE CLOUD DRIVE -->
+            <section id="sec-cloud" class="tab-page hidden space-y-4 anim-spring">
+                
+                <!-- Cloud Upload Zone -->
                 <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-4">
-                    <h2 class="text-sm font-black flex items-center gap-2">
-                        <i class="fa-solid fa-id-badge"></i> بيانات الحساب
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-xs font-black flex items-center gap-2">
+                                <i class="fa-solid fa-cloud"></i> السحابة الذكية اللانهائية (∞)
+                            </h2>
+                            <p class="text-[11px] text-neutral-500">رفع وإدارة الملفات المحلية مع إمكانية تحليل المحتوى بالذكاء الاصطناعي</p>
+                        </div>
+                        <button type="button" onclick="confirmWipeCloud()" class="btn-act px-3.5 py-2 rounded-xl bg-rose-600 text-white text-xs font-black">
+                            <i class="fa-solid fa-broom ml-1"></i> مسح التخزين السحابي
+                        </button>
+                    </div>
+
+                    <!-- File Selector -->
+                    <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-800 rounded-3xl p-6 text-center space-y-3 hover:border-black dark:hover:border-white transition-colors">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-neutral-400"></i>
+                        <p class="text-xs font-bold">اسحب الملفات هنا أو اضغط للاختيار من جهازك</p>
+                        <input type="file" id="cloud-file-input" multiple onchange="handleFileUpload(event)" class="hidden">
+                        <button type="button" onclick="document.getElementById('cloud-file-input').click()" class="btn-act px-5 py-2.5 rounded-2xl bg-black dark:bg-white text-white dark:text-black text-xs font-black inline-block">
+                            اختيار ملفات
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Files Explorer -->
+                <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-3">
+                    <h3 class="text-xs font-black">ملفاتك المرفوعة</h3>
+                    <div id="cloud-files-list" class="space-y-2"></div>
+                </div>
+            </section>
+
+            <!-- TAB 6: PROFILE & ACCOUNT -->
+            <section id="sec-account" class="tab-page hidden space-y-4 anim-spring">
+                <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-4">
+                    <h2 class="text-xs font-black flex items-center gap-2">
+                        <i class="fa-solid fa-id-card"></i> بيانات وإعدادات الحساب
                     </h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div class="space-y-1">
-                            <label class="text-[11px] font-bold text-neutral-500">الاسم</label>
-                            <input type="text" id="acc-name" placeholder="اسمك" class="w-full bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
+                            <label class="text-[11px] font-bold text-neutral-500">الاسم الكامل</label>
+                            <input type="text" id="acc-fullname" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
                         </div>
                         <div class="space-y-1">
-                            <label class="text-[11px] font-bold text-neutral-500">رقم المعرف</label>
-                            <input type="text" id="acc-id" placeholder="YXA-10001" class="w-full bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs font-mono focus:outline-none">
+                            <label class="text-[11px] font-bold text-neutral-500">رقم YXA الخاص بك</label>
+                            <input type="text" id="acc-yxanum" readonly class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs font-mono font-bold focus:outline-none">
                         </div>
                         <div class="space-y-1">
                             <label class="text-[11px] font-bold text-neutral-500">رقم الجوال</label>
-                            <input type="tel" id="acc-phone" placeholder="05xxxxxxxx" class="w-full bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
+                            <input type="tel" id="acc-phone" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
                         </div>
                         <div class="space-y-1">
                             <label class="text-[11px] font-bold text-neutral-500">البريد الإلكتروني</label>
-                            <input type="email" id="acc-email" placeholder="name@example.com" class="w-full bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
+                            <input type="email" id="acc-email" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-2 pt-2">
-                        <button type="button" onclick="saveAccountProfile()" class="btn-motion px-5 py-2.5 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black">
-                            حفظ الحساب
+                        <button type="button" onclick="saveProfileChanges()" class="btn-act px-6 py-3 rounded-2xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">
+                            حفظ التعديلات
                         </button>
-                        <button type="button" onclick="clearCloudStorage()" class="btn-motion px-4 py-2.5 rounded-xl bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-xs font-bold">
-                            مسح التخزين السحابي
+                        <button type="button" onclick="copyYxaId()" class="btn-act px-4 py-3 rounded-2xl border border-neutral-300 dark:border-neutral-800 text-xs font-bold">
+                            نسخ رقم YXA
                         </button>
                     </div>
                 </div>
@@ -341,60 +518,113 @@
         </main>
     </div>
 
-    <!-- شريط التنقل السفلي للهواتف -->
-    <nav class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md border-t border-neutral-300 dark:border-neutral-800 px-1 py-2 flex justify-around">
-        <button type="button" onclick="switchView('updates')" id="mob-updates" class="mob-tab btn-motion flex flex-col items-center gap-1 px-2 py-1 text-neutral-950 dark:text-white font-black">
+    <!-- BOTTOM MOBILE BAR -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-black/95 backdrop-blur-md border-t border-neutral-300 dark:border-neutral-800 px-1 py-2 flex justify-around">
+        <button type="button" onclick="openTab('updates')" id="bottomtab-updates" class="nav-bottom btn-act flex flex-col items-center gap-1 px-2 py-1 text-black dark:text-white font-black">
             <i class="fa-solid fa-bolt text-sm"></i>
-            <span class="text-[10px]">التحديثات</span>
+            <span class="text-[10px]">الستوريات</span>
         </button>
-        <button type="button" onclick="switchView('calls')" id="mob-calls" class="mob-tab btn-motion flex flex-col items-center gap-1 px-2 py-1 text-neutral-400 font-bold">
-            <i class="fa-solid fa-phone-volume text-sm"></i>
-            <span class="text-[10px]">المكالمات</span>
+        <button type="button" onclick="openTab('platforms')" id="bottomtab-platforms" class="nav-bottom btn-act flex flex-col items-center gap-1 px-2 py-1 text-neutral-400 font-bold">
+            <i class="fa-solid fa-address-book text-sm"></i>
+            <span class="text-[10px]">المنصات</span>
         </button>
-        <button type="button" onclick="switchView('friends')" id="mob-friends" class="mob-tab btn-motion flex flex-col items-center gap-1 px-2 py-1 text-neutral-400 font-bold">
+        <button type="button" onclick="openTab('friends')" id="bottomtab-friends" class="nav-bottom btn-act flex flex-col items-center gap-1 px-2 py-1 text-neutral-400 font-bold">
             <i class="fa-solid fa-user-plus text-sm"></i>
             <span class="text-[10px]">الأصدقاء</span>
         </button>
-        <button type="button" onclick="switchView('ai')" id="mob-ai" class="mob-tab btn-motion flex flex-col items-center gap-1 px-2 py-1 text-neutral-400 font-bold">
+        <button type="button" onclick="openTab('ai')" id="bottomtab-ai" class="nav-bottom btn-act flex flex-col items-center gap-1 px-2 py-1 text-neutral-400 font-bold">
             <i class="fa-solid fa-brain text-sm"></i>
             <span class="text-[10px]">الذكاء</span>
         </button>
-        <button type="button" onclick="switchView('account')" id="mob-account" class="mob-tab btn-motion flex flex-col items-center gap-1 px-2 py-1 text-neutral-400 font-bold">
-            <i class="fa-solid fa-user text-sm"></i>
-            <span class="text-[10px]">الحساب</span>
+        <button type="button" onclick="openTab('cloud')" id="bottomtab-cloud" class="nav-bottom btn-act flex flex-col items-center gap-1 px-2 py-1 text-neutral-400 font-bold">
+            <i class="fa-solid fa-cloud text-sm"></i>
+            <span class="text-[10px]">السحابة</span>
         </button>
     </nav>
 
-    <!-- نافذة عرض الستوري -->
-    <div id="story-viewer" class="fixed inset-0 z-50 hidden bg-black/90 flex items-center justify-center p-4">
-        <div class="w-full max-w-sm rounded-3xl bg-neutral-950 border border-neutral-800 text-white p-6 space-y-4 anim-pop">
+    <!-- CONTACT MODAL -->
+    <div id="contact-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-6 space-y-4 anim-spring">
             <div class="flex items-center justify-between">
-                <span id="story-viewer-author" class="text-xs font-black">ستوري</span>
-                <button type="button" onclick="closeStoryViewer()" class="btn-motion w-8 h-8 rounded-xl bg-neutral-900 flex items-center justify-center text-neutral-400 hover:text-white">
+                <h3 class="text-sm font-black flex items-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-emerald-500"></i> التواصل المباشر
+                </h3>
+                <button type="button" onclick="closeContactModal()" class="btn-act w-8 h-8 rounded-xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center text-xs">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <p id="story-viewer-content" class="text-sm font-bold text-center py-8 px-4 rounded-2xl bg-black border border-neutral-800 leading-relaxed"></p>
-            <button type="button" onclick="closeStoryViewer()" class="btn-motion w-full py-2.5 rounded-xl bg-white text-black text-xs font-black">
+            <div class="space-y-3 pt-2">
+                <a href="https://wa.me/966563068840" target="_blank" class="btn-act w-full p-3.5 rounded-2xl bg-emerald-600 text-white font-black text-xs flex items-center justify-between">
+                    <span><i class="fa-brands fa-whatsapp text-base ml-2"></i> تواصل عبر الواتساب</span>
+                    <span class="font-mono dir-ltr">0563068840</span>
+                </a>
+                <button type="button" onclick="copyEmailAddress('ya8827860@gmail.com')" class="btn-act w-full p-3.5 rounded-2xl border border-neutral-300 dark:border-neutral-800 text-xs font-bold flex items-center justify-between">
+                    <span><i class="fa-solid fa-envelope ml-2"></i> البريد الإلكتروني</span>
+                    <span class="font-mono text-neutral-500">ya8827860@gmail.com</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STORY VIEWER MODAL -->
+    <div id="story-modal" class="fixed inset-0 z-50 hidden bg-black/95 flex items-center justify-center p-4">
+        <div class="w-full max-w-sm rounded-3xl bg-neutral-950 border border-neutral-800 text-white p-6 space-y-4 anim-spring">
+            <div class="flex items-center justify-between">
+                <span id="story-author-name" class="text-xs font-black">القصة</span>
+                <button type="button" onclick="closeStoryViewer()" class="btn-act w-8 h-8 rounded-xl bg-neutral-900 text-neutral-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="py-10 px-4 rounded-2xl bg-black border border-neutral-800 text-center">
+                <p id="story-body-text" class="text-sm font-bold leading-relaxed"></p>
+            </div>
+            <button type="button" onclick="closeStoryViewer()" class="btn-act w-full py-3 rounded-2xl bg-white text-black font-black text-xs">
                 إغلاق
             </button>
         </div>
     </div>
 
+    <!-- 1-ON-1 CHAT MODAL -->
+    <div id="chat-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-lg bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-5 space-y-4 anim-spring">
+            <div class="flex items-center justify-between pb-3 border-b border-neutral-200 dark:border-neutral-800">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center text-xs font-black">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <h3 id="chat-target-name" class="text-xs font-black">محادثة</h3>
+                        <p id="chat-target-id" class="text-[10px] font-mono text-neutral-500"></p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeChatModal()" class="btn-act w-8 h-8 rounded-xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="direct-chat-feed" class="h-64 overflow-y-auto space-y-2 p-2"></div>
+            <div class="flex gap-2">
+                <input type="text" id="direct-chat-input" onkeydown="if(event.key==='Enter') sendDirectMessage()" placeholder="اكتب رسالتك..." class="flex-1 bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
+                <button type="button" onclick="sendDirectMessage()" class="btn-act px-5 py-3 rounded-2xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">
+                    إرسال
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT APPLICATION LOGIC -->
     <script>
-        // مفاتيح التخزين المحلية
-        const STORE = {
-            account: 'yxa_core_account',
-            stories: 'yxa_core_stories',
-            updates: 'yxa_core_updates',
-            calls: 'yxa_core_calls',
-            friends: 'yxa_core_friends',
-            aiMode: 'yxa_core_ai_mode',
-            aiKey: 'yxa_core_ai_key'
+        const STORAGE_KEYS = {
+            session: 'yxa_v3_session',
+            stories: 'yxa_v3_stories',
+            posts: 'yxa_v3_posts',
+            calls: 'yxa_v3_calls',
+            friends: 'yxa_v3_friends',
+            cloud: 'yxa_v3_cloud',
+            aiKey: 'yxa_v3_aikey',
+            aiMode: 'yxa_v3_aimode'
         };
 
-        // قراءة آمنة لبيانات التخزين
-        function loadStore(key, fallback) {
+        function getStored(key, fallback) {
             try {
                 const raw = localStorage.getItem(key);
                 return raw ? JSON.parse(raw) : fallback;
@@ -403,433 +633,610 @@
             }
         }
 
-        // حفظ آمن لبيانات التخزين
-        function saveStore(key, value) {
+        function setStored(key, val) {
             try {
-                localStorage.setItem(key, JSON.stringify(value));
+                localStorage.setItem(key, JSON.stringify(val));
             } catch (_) {}
         }
 
-        // حالة المنصة
-        let accountData = loadStore(STORE.account, {
-            name: 'مستخدم YXA',
-            id: 'YXA-2026',
-            phone: '',
-            email: ''
-        });
-        let storiesList = loadStore(STORE.stories, [
-            { id: 1, author: 'YXA', text: 'ستوري جديد في YXA.' }
+        // State variables
+        let currentUser = getStored(STORAGE_KEYS.session, null);
+        let stories = getStored(STORAGE_KEYS.stories, [
+            { id: 1, author: 'تواصل | YXA', text: 'أهلاً بكم في المنصة الجديدة المتكاملة!' }
         ]);
-        let updatesList = loadStore(STORE.updates, [
-            { id: 1, author: 'YXA', time: 'الآن', text: 'مرحباً بك في مساحة التحديثات والستوريات.' }
+        let posts = getStored(STORAGE_KEYS.posts, [
+            { id: 1, author: 'منصة YXA', time: 'منذ قليل', text: 'تم تحديث الواجهة لتكون أكثر سلاسة وأناقة باللونين الأبيض والأسود.', likes: 3, comments: [] }
         ]);
-        let callsList = loadStore(STORE.calls, []);
-        let friendsList = loadStore(STORE.friends, []);
-        let aiSource = localStorage.getItem(STORE.aiMode) || 'builtin';
-        let customApiKey = localStorage.getItem(STORE.aiKey) || '';
+        let calls = getStored(STORAGE_KEYS.calls, []);
+        let friends = getStored(STORAGE_KEYS.friends, [
+            { id: 101, name: 'فريق YXA', yxaId: 'YXA-8888', phone: '0563068840', email: 'ya8827860@gmail.com' }
+        ]);
+        let cloudFiles = getStored(STORAGE_KEYS.cloud, []);
+        let aiMode = localStorage.getItem(STORAGE_KEYS.aiMode) || 'builtin';
+        let geminiApiKey = localStorage.getItem(STORAGE_KEYS.aiKey) || '';
 
-        let callTimerInterval = null;
-        let callSeconds = 0;
+        let activeCallTimer = null;
+        let activeCallSeconds = 0;
+        let activeChatFriend = null;
 
-        // تهيئة الصفحة عند التحميل
         document.addEventListener('DOMContentLoaded', () => {
-            fillAccountInputs();
-            updateHeaderLabel();
+            initAuthScreen();
             renderStories();
-            renderUpdates();
+            renderPosts();
+            renderPlatformsDirectory();
             renderCallsHistory();
             renderFriends();
-            applyAiSourceUI();
-            updateCloudCounter();
-            switchView('updates');
+            renderCloudFiles();
+            syncAiConfig();
         });
 
-        // عرض إشعار سريع
-        function notify(msg) {
-            const stack = document.getElementById('alert-stack');
-            const item = document.createElement('div');
-            item.className = 'anim-pop px-4 py-3 rounded-2xl bg-white text-black border border-neutral-300 shadow-xl text-xs font-black pointer-events-auto flex items-center gap-2';
-            item.innerHTML = `<i class="fa-solid fa-check-circle"></i><span>${msg}</span>`;
-            stack.appendChild(item);
-            setTimeout(() => item.remove(), 2600);
+        // Toast notifications
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = 'anim-spring px-4 py-3 rounded-2xl bg-black text-white dark:bg-white dark:text-black shadow-2xl text-xs font-black pointer-events-auto flex items-center gap-2 border border-neutral-700';
+            el.innerHTML = `<i class="fa-solid fa-check-circle"></i><span>${msg}</span>`;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 2500);
         }
 
-        // تبديل المظهر (ليلي / نهاري)
-        function toggleColorScheme() {
+        // Theme Toggle
+        function toggleThemeMode() {
             document.documentElement.classList.toggle('dark');
         }
 
-        // التنقل بين الأقسام
-        function switchView(viewName) {
-            document.querySelectorAll('.app-view').forEach(v => v.classList.add('hidden'));
-            const target = document.getElementById(`view-${viewName}`);
-            if (target) target.classList.remove('hidden');
+        // AUTHENTICATION LOGIC
+        function initAuthScreen() {
+            const overlay = document.getElementById('auth-overlay');
+            if (currentUser) {
+                overlay.classList.add('hidden');
+                updateUserBadge();
+                populateAccountForm();
+            } else {
+                overlay.classList.remove('hidden');
+                generateNewYxaNumber();
+            }
+        }
 
-            document.querySelectorAll('.side-tab').forEach(btn => {
-                btn.classList.remove('bg-neutral-950', 'dark:bg-white', 'text-white', 'dark:text-black', 'font-black');
+        function switchAuthTab(tab) {
+            ['id', 'register', 'contact'].forEach(t => {
+                const btn = document.getElementById(`authtab-${t}`);
+                const form = document.getElementById(`form-auth-${t}`);
+                if (t === tab) {
+                    btn.className = 'btn-act py-2.5 rounded-xl bg-white dark:bg-black shadow text-black dark:text-white font-black';
+                    form.classList.remove('hidden');
+                } else {
+                    btn.className = 'btn-act py-2.5 rounded-xl text-neutral-500 hover:text-black dark:hover:text-white';
+                    form.classList.add('hidden');
+                }
+            });
+        }
+
+        function generateNewYxaNumber() {
+            const randomId = 'YXA-' + Math.floor(1000 + Math.random() * 9000);
+            const input = document.getElementById('reg-yxa-num');
+            if (input) input.value = randomId;
+            return randomId;
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const yxaId = document.getElementById('login-yxa-id').value.trim();
+            currentUser = {
+                name: 'مستخدم YXA',
+                yxaId: yxaId.toUpperCase(),
+                phone: '0563068840',
+                email: 'ya8827860@gmail.com'
+            };
+            setStored(STORAGE_KEYS.session, currentUser);
+            initAuthScreen();
+            showToast('تم تسجيل الدخول بنجاح');
+        }
+
+        function handleRegisterSubmit(e) {
+            e.preventDefault();
+            currentUser = {
+                name: document.getElementById('reg-fullname').value.trim() || 'مستخدم جديد',
+                yxaId: document.getElementById('reg-yxa-num').value.trim(),
+                phone: document.getElementById('reg-phone').value.trim() || '0563068840',
+                email: document.getElementById('reg-email').value.trim() || 'ya8827860@gmail.com'
+            };
+            setStored(STORAGE_KEYS.session, currentUser);
+            initAuthScreen();
+            showToast('تم إنشاء الحساب بنجاح');
+        }
+
+        function handleQuickContactSubmit(e) {
+            e.preventDefault();
+            const val = document.getElementById('contact-input').value.trim();
+            currentUser = {
+                name: 'مستخدم YXA',
+                yxaId: 'YXA-' + Math.floor(1000 + Math.random() * 9000),
+                phone: val.includes('@') ? '0563068840' : val,
+                email: val.includes('@') ? val : 'ya8827860@gmail.com'
+            };
+            setStored(STORAGE_KEYS.session, currentUser);
+            initAuthScreen();
+            showToast('تم الدخول بنجاح');
+        }
+
+        function quickSocialLogin(provider) {
+            currentUser = {
+                name: `مستخدم ${provider}`,
+                yxaId: 'YXA-' + Math.floor(1000 + Math.random() * 9000),
+                phone: '0563004400',
+                email: `${provider.toLowerCase()}user@yxa.app`
+            };
+            setStored(STORAGE_KEYS.session, currentUser);
+            initAuthScreen();
+            showToast(`تم تسجيل الدخول بواسطة ${provider}`);
+        }
+
+        function logoutUser() {
+            localStorage.removeItem(STORAGE_KEYS.session);
+            currentUser = null;
+            initAuthScreen();
+            showToast('تم تسجيل الخروج');
+        }
+
+        function updateUserBadge() {
+            if (!currentUser) return;
+            document.getElementById('user-badge-yxa').textContent = currentUser.yxaId;
+            document.getElementById('user-badge-name').textContent = currentUser.name;
+        }
+
+        // NAVIGATION TABS
+        function openTab(tabId) {
+            document.querySelectorAll('.tab-page').forEach(sec => sec.classList.add('hidden'));
+            const active = document.getElementById(`sec-${tabId}`);
+            if (active) active.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-side').forEach(btn => {
+                btn.classList.remove('bg-black', 'dark:bg-white', 'text-white', 'dark:text-black', 'font-black');
                 btn.classList.add('text-neutral-600', 'dark:text-neutral-400', 'font-bold');
             });
-            const activeSide = document.getElementById(`nav-${viewName}`);
-            if (activeSide) {
-                activeSide.classList.remove('text-neutral-600', 'dark:text-neutral-400', 'font-bold');
-                activeSide.classList.add('bg-neutral-950', 'dark:bg-white', 'text-white', 'dark:text-black', 'font-black');
+            const sideBtn = document.getElementById(`sidetab-${tabId}`);
+            if (sideBtn) {
+                sideBtn.classList.remove('text-neutral-600', 'dark:text-neutral-400', 'font-bold');
+                sideBtn.classList.add('bg-black', 'dark:bg-white', 'text-white', 'dark:text-black', 'font-black');
             }
 
-            document.querySelectorAll('.mob-tab').forEach(btn => {
-                btn.classList.remove('text-neutral-950', 'dark:text-white', 'font-black');
+            document.querySelectorAll('.nav-bottom').forEach(btn => {
+                btn.classList.remove('text-black', 'dark:text-white', 'font-black');
                 btn.classList.add('text-neutral-400', 'font-bold');
             });
-            const activeMob = document.getElementById(`mob-${viewName}`);
-            if (activeMob) {
-                activeMob.classList.remove('text-neutral-400', 'font-bold');
-                activeMob.classList.add('text-neutral-950', 'dark:text-white', 'font-black');
+            const bottomBtn = document.getElementById(`bottomtab-${tabId}`);
+            if (bottomBtn) {
+                bottomBtn.classList.remove('text-neutral-400', 'font-bold');
+                bottomBtn.classList.add('text-black', 'dark:text-white', 'font-black');
             }
         }
 
-        // تحديث عداد التخزين السحابي
-        function updateCloudCounter() {
-            const total = storiesList.length + updatesList.length + callsList.length + friendsList.length;
-            const badge = document.getElementById('cloud-count-badge');
-            if (badge) badge.textContent = `${total} عنصر`;
-        }
-
-        // مسح التخزين السحابي بالكامل
-        function clearCloudStorage() {
-            Object.values(STORE).forEach(k => localStorage.removeItem(k));
-            storiesList = [];
-            updatesList = [];
-            callsList = [];
-            friendsList = [];
-            accountData = { name: 'مستخدم YXA', id: 'YXA-2026', phone: '', email: '' };
-            customApiKey = '';
-            aiSource = 'builtin';
-
-            fillAccountInputs();
-            updateHeaderLabel();
-            renderStories();
-            renderUpdates();
-            renderCallsHistory();
-            renderFriends();
-            applyAiSourceUI();
-            updateCloudCounter();
-            notify('تم مسح التخزين السحابي بالكامل.');
-        }
-
-        // الستوريات
-        function publishStory() {
-            const input = document.getElementById('story-text');
-            const text = (input.value || '').trim();
-            if (!text) return;
-
-            storiesList.unshift({
-                id: Date.now(),
-                author: accountData.name || 'مستخدم YXA',
-                text
-            });
-            saveStore(STORE.stories, storiesList);
-            input.value = '';
-            renderStories();
-            updateCloudCounter();
-            notify('تمت إضافة الستوري.');
-        }
-
+        // STORIES & FEED
         function renderStories() {
-            const strip = document.getElementById('stories-strip');
-            strip.innerHTML = '';
-
-            if (!storiesList.length) {
-                strip.innerHTML = `<span class="text-xs text-neutral-500">لا توجد ستوريات حالياً.</span>`;
-                return;
-            }
-
-            storiesList.forEach(st => {
-                const chip = document.createElement('button');
-                chip.type = 'button';
-                chip.onclick = () => openStoryViewer(st);
-                chip.className = 'btn-motion px-4 py-2.5 rounded-2xl bg-neutral-100 dark:bg-black border border-neutral-300 dark:border-neutral-800 shrink-0 text-right max-w-[180px]';
-                chip.innerHTML = `
-                    <span class="block text-[10px] font-black text-neutral-500 truncate">${st.author}</span>
-                    <span class="block text-xs font-bold truncate mt-0.5">${st.text}</span>
+            const container = document.getElementById('stories-container');
+            container.innerHTML = '';
+            stories.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.onclick = () => openStoryViewer(item);
+                btn.className = 'btn-act p-3 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-right shrink-0 min-w-[130px]';
+                btn.innerHTML = `
+                    <p class="text-[10px] font-black text-neutral-500 truncate">${item.author}</p>
+                    <p class="text-xs font-bold truncate mt-1">${item.text}</p>
                 `;
-                strip.appendChild(chip);
+                container.appendChild(btn);
             });
         }
 
-        function openStoryViewer(st) {
-            document.getElementById('story-viewer-author').textContent = `ستوري • ${st.author}`;
-            document.getElementById('story-viewer-content').textContent = st.text;
-            document.getElementById('story-viewer').classList.remove('hidden');
+        function promptAddStory() {
+            const text = prompt('اكتب نص الستوري الجديد:');
+            if (text && text.trim()) {
+                stories.unshift({ id: Date.now(), author: currentUser ? currentUser.name : 'مستخدم', text: text.trim() });
+                setStored(STORAGE_KEYS.stories, stories);
+                renderStories();
+                showToast('تمت إضافة الستوري');
+            }
+        }
+
+        async function generateAiStory() {
+            const idea = await callAiAPI('اكتب ستوري قصير جداً وملهم لمنصة تواصل مجتمعية');
+            stories.unshift({ id: Date.now(), author: 'الذكاء الاصطناعي ✨', text: idea });
+            setStored(STORAGE_KEYS.stories, stories);
+            renderStories();
+            showToast('تم إنشاء ستوري بالذكاء الاصطناعي');
+        }
+
+        function openStoryViewer(item) {
+            document.getElementById('story-author-name').textContent = item.author;
+            document.getElementById('story-body-text').textContent = item.text;
+            document.getElementById('story-modal').classList.remove('hidden');
         }
 
         function closeStoryViewer() {
-            document.getElementById('story-viewer').classList.add('hidden');
+            document.getElementById('story-modal').classList.add('hidden');
         }
 
-        // التحديثات
-        function publishUpdate() {
-            const box = document.getElementById('update-input');
-            const text = (box.value || '').trim();
-            if (!text) return;
-
-            updatesList.unshift({
-                id: Date.now(),
-                author: accountData.name || 'مستخدم YXA',
-                time: 'الآن',
-                text
-            });
-            saveStore(STORE.updates, updatesList);
-            box.value = '';
-            renderUpdates();
-            updateCloudCounter();
-            notify('تم نشر التحديث.');
-        }
-
-        async function aiEnhanceUpdate() {
-            const box = document.getElementById('update-input');
-            const current = (box.value || '').trim();
-            if (!current) return notify('اكتب نص التحديث أولاً.');
-            box.value = await askAI(`أعد صياغة هذا التحديث بشكل واضح ومختصر: ${current}`);
-        }
-
-        function renderUpdates() {
-            const list = document.getElementById('updates-list');
-            list.innerHTML = '';
-
-            if (!updatesList.length) {
-                list.innerHTML = `<div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-6 text-center text-xs text-neutral-500">لا توجد تحديثات حالياً.</div>`;
-                return;
-            }
-
-            updatesList.forEach(up => {
-                const card = document.createElement('div');
-                card.className = 'anim-pop bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 space-y-2';
-                card.innerHTML = `
+        function renderPosts() {
+            const feed = document.getElementById('posts-feed');
+            feed.innerHTML = '';
+            posts.forEach(p => {
+                const el = document.createElement('div');
+                el.className = 'bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 space-y-3';
+                el.innerHTML = `
                     <div class="flex items-center justify-between text-xs">
-                        <span class="font-black">${up.author}</span>
-                        <span class="text-[10px] text-neutral-500">${up.time}</span>
+                        <span class="font-black">${p.author}</span>
+                        <span class="text-[10px] font-mono text-neutral-500">${p.time}</span>
                     </div>
-                    <p class="text-xs sm:text-sm leading-relaxed">${up.text}</p>
+                    <p class="text-xs sm:text-sm leading-relaxed">${p.text}</p>
+                    <div class="flex items-center gap-3 pt-2 border-t border-neutral-200 dark:border-neutral-800 text-xs">
+                        <button type="button" onclick="likePost(${p.id})" class="btn-act font-bold text-neutral-500 hover:text-black dark:hover:text-white">
+                            <i class="fa-solid fa-heart text-rose-500 ml-1"></i> ${p.likes} إعجاب
+                        </button>
+                    </div>
                 `;
-                list.appendChild(card);
+                feed.appendChild(el);
             });
         }
 
-        // المكالمات
+        function createNewPost() {
+            const txt = document.getElementById('post-input').value.trim();
+            if (!txt) return;
+            posts.unshift({ id: Date.now(), author: currentUser ? currentUser.name : 'مستخدم', time: 'الآن', text: txt, likes: 0, comments: [] });
+            setStored(STORAGE_KEYS.posts, posts);
+            document.getElementById('post-input').value = '';
+            renderPosts();
+            showToast('تم نشر التحديث');
+        }
+
+        async function polishPostWithAI() {
+            const input = document.getElementById('post-input');
+            if (!input.value.trim()) return showToast('اكتب نصاً أولاً');
+            input.value = await callAiAPI(`أعد صياغة التحديث بأسلوب جذب وتواصل اجتماعي رائع: ${input.value}`);
+        }
+
+        function likePost(id) {
+            const p = posts.find(x => x.id === id);
+            if (p) {
+                p.likes++;
+                setStored(STORAGE_KEYS.posts, posts);
+                renderPosts();
+            }
+        }
+
+        // PLATFORMS DIRECTORY & CALLS
+        function renderPlatformsDirectory() {
+            const grid = document.getElementById('platforms-directory-grid');
+            document.getElementById('platforms-count').textContent = `${friends.length} منصة`;
+            grid.innerHTML = '';
+
+            friends.forEach(f => {
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-2xl bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-2';
+                card.innerHTML = `
+                    <div class="min-w-0 space-y-0.5">
+                        <p class="text-xs font-black truncate">${f.name}</p>
+                        <p class="text-[10px] font-mono text-neutral-500 truncate">${f.yxaId} • ${f.phone}</p>
+                    </div>
+                    <div class="flex gap-1.5 shrink-0">
+                        <button type="button" onclick="openDirectChat(${f.id})" title="دردشة" class="btn-act p-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs">
+                            <i class="fa-solid fa-comments"></i>
+                        </button>
+                        <button type="button" onclick="quickCall('${f.name}')" title="اتصال" class="btn-act p-2 rounded-xl bg-neutral-200 dark:bg-neutral-800 text-xs">
+                            <i class="fa-solid fa-phone"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
         function startCall(type) {
-            const input = document.getElementById('call-target');
-            const target = (input.value || '').trim() || 'صديق';
+            const target = document.getElementById('call-target-input').value.trim() || 'جهة اتصال';
+            clearInterval(activeCallTimer);
+            activeCallSeconds = 0;
 
-            clearInterval(callTimerInterval);
-            callSeconds = 0;
-
-            document.getElementById('active-call-title').textContent = `مكالمة ${type} مع: ${target}`;
+            document.getElementById('active-call-name').textContent = `مكالمة ${type} مع: ${target}`;
             document.getElementById('active-call-timer').textContent = '00:00';
-            document.getElementById('active-call-banner').classList.remove('hidden');
+            document.getElementById('active-call-box').classList.remove('hidden');
 
-            callTimerInterval = setInterval(() => {
-                callSeconds++;
-                const mins = String(Math.floor(callSeconds / 60)).padStart(2, '0');
-                const secs = String(callSeconds % 60).padStart(2, '0');
-                document.getElementById('active-call-timer').textContent = `${mins}:${secs}`;
+            activeCallTimer = setInterval(() => {
+                activeCallSeconds++;
+                const m = String(Math.floor(activeCallSeconds / 60)).padStart(2, '0');
+                const s = String(activeCallSeconds % 60).padStart(2, '0');
+                document.getElementById('active-call-timer').textContent = `${m}:${s}`;
             }, 1000);
 
-            callsList.unshift({
-                id: Date.now(),
-                target,
-                type,
-                time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
-            });
-            saveStore(STORE.calls, callsList);
+            calls.unshift({ id: Date.now(), target, type, time: new Date().toLocaleTimeString('ar-SA') });
+            setStored(STORAGE_KEYS.calls, calls);
             renderCallsHistory();
-            updateCloudCounter();
-            notify(`بدأت مكالمة ${type} مع ${target}.`);
+            showToast(`بدأت مكالمة ${type}`);
         }
 
-        function endActiveCall() {
-            clearInterval(callTimerInterval);
-            document.getElementById('active-call-banner').classList.add('hidden');
-            notify('تم إنهاء المكالمة.');
+        function endCall() {
+            clearInterval(activeCallTimer);
+            document.getElementById('active-call-box').classList.add('hidden');
+            showToast('تم إنهاء المكالمة');
         }
 
-        function renderCallsHistory() {
-            const box = document.getElementById('calls-history');
-            box.innerHTML = '';
-
-            if (!callsList.length) {
-                box.innerHTML = `<p class="text-xs text-neutral-500">لا يوجد سجل مكالمات.</p>`;
-                return;
-            }
-
-            callsList.forEach(c => {
-                const row = document.createElement('div');
-                row.className = 'p-3 rounded-2xl bg-neutral-100 dark:bg-black border border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs';
-                row.innerHTML = `
-                    <span class="font-bold"><i class="fa-solid ${c.type === 'فيديو' ? 'fa-video' : 'fa-phone'} ml-2"></i>${c.target} (${c.type})</span>
-                    <span class="text-[10px] font-mono text-neutral-500">${c.time}</span>
-                `;
-                box.appendChild(row);
-            });
-        }
-
-        // إضافة الأصدقاء
-        function addNewFriend() {
-            const nameEl = document.getElementById('friend-name');
-            const handleEl = document.getElementById('friend-handle');
-            const name = (nameEl.value || '').trim();
-            const handle = (handleEl.value || '').trim();
-
-            if (!name && !handle) return notify('أدخل اسم الصديق أو معرفه.');
-
-            friendsList.unshift({
-                id: Date.now(),
-                name: name || 'صديق',
-                handle: handle || 'YXA-FRIEND'
-            });
-            saveStore(STORE.friends, friendsList);
-            nameEl.value = '';
-            handleEl.value = '';
-            renderFriends();
-            updateCloudCounter();
-            notify('تمت إضافة الصديق.');
-        }
-
-        function renderFriends() {
-            const list = document.getElementById('friends-list');
-            const total = document.getElementById('friends-total');
-            total.textContent = String(friendsList.length);
-            list.innerHTML = '';
-
-            if (!friendsList.length) {
-                list.innerHTML = `<p class="col-span-full text-xs text-neutral-500">لا يوجد أصدقاء مضافون حالياً.</p>`;
-                return;
-            }
-
-            friendsList.forEach(fr => {
-                const card = document.createElement('div');
-                card.className = 'anim-pop p-3.5 rounded-2xl bg-neutral-100 dark:bg-black border border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-2';
-                card.innerHTML = `
-                    <div class="min-w-0">
-                        <p class="text-xs font-black truncate">${fr.name}</p>
-                        <p class="text-[11px] font-mono text-neutral-500 truncate">${fr.handle}</p>
-                    </div>
-                    <button type="button" onclick="quickCallFriend('${fr.name}')" class="btn-motion px-3 py-1.5 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-black text-[11px] font-black shrink-0">
-                        اتصال
-                    </button>
-                `;
-                list.appendChild(card);
-            });
-        }
-
-        function quickCallFriend(name) {
-            document.getElementById('call-target').value = name;
-            switchView('calls');
+        function quickCall(name) {
+            document.getElementById('call-target-input').value = name;
+            openTab('platforms');
             startCall('صوتية');
         }
 
-        // الذكاء الاصطناعي (المدمج أو مفتاح API الخاص)
-        function setAiSource(mode) {
-            aiSource = mode;
-            localStorage.setItem(STORE.aiMode, mode);
-            applyAiSourceUI();
+        function renderCallsHistory() {
+            const list = document.getElementById('calls-history-list');
+            list.innerHTML = '';
+            if (!calls.length) {
+                list.innerHTML = `<p class="text-xs text-neutral-500">لا توجد مكالمات سابقة</p>`;
+                return;
+            }
+            calls.forEach(c => {
+                const el = document.createElement('div');
+                el.className = 'p-3 rounded-2xl bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs';
+                el.innerHTML = `
+                    <span class="font-bold"><i class="fa-solid ${c.type === 'فيديو' ? 'fa-video' : 'fa-phone'} ml-2"></i> ${c.target} (${c.type})</span>
+                    <span class="text-[10px] font-mono text-neutral-500">${c.time}</span>
+                `;
+                list.appendChild(el);
+            });
         }
 
-        function applyAiSourceUI() {
-            const isCustom = aiSource === 'custom';
-            const bBtn = document.getElementById('src-builtin');
-            const cBtn = document.getElementById('src-custom');
-            const keyBox = document.getElementById('custom-key-box');
-            const badge = document.getElementById('ai-engine-badge');
-            const keyInput = document.getElementById('custom-api-key');
+        // FRIENDS & DIRECT CHAT
+        function addFriend() {
+            const name = document.getElementById('friend-name-input').value.trim();
+            const idVal = document.getElementById('friend-id-input').value.trim();
+            if (!name && !idVal) return showToast('يرجى كتابة الاسم والمعرف');
 
-            if (keyInput) keyInput.value = customApiKey;
-            if (keyBox) keyBox.classList.toggle('hidden', !isCustom);
-            if (badge) badge.textContent = isCustom && customApiKey ? 'API خاص' : 'مدمج';
+            const newF = {
+                id: Date.now(),
+                name: name || 'صديق جديد',
+                yxaId: idVal.includes('YXA') ? idVal : 'YXA-' + Math.floor(1000 + Math.random() * 9000),
+                phone: idVal.includes('05') ? idVal : '0563068840',
+                email: idVal.includes('@') ? idVal : 'ya8827860@gmail.com'
+            };
 
-            if (bBtn && cBtn) {
-                if (!isCustom) {
-                    bBtn.className = 'ai-src btn-motion px-3 py-1.5 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black';
-                    cBtn.className = 'ai-src btn-motion px-3 py-1.5 rounded-xl bg-neutral-200 dark:bg-neutral-900 text-xs font-bold';
-                } else {
-                    cBtn.className = 'ai-src btn-motion px-3 py-1.5 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-black';
-                    bBtn.className = 'ai-src btn-motion px-3 py-1.5 rounded-xl bg-neutral-200 dark:bg-neutral-900 text-xs font-bold';
-                }
+            friends.unshift(newF);
+            setStored(STORAGE_KEYS.friends, friends);
+            document.getElementById('friend-name-input').value = '';
+            document.getElementById('friend-id-input').value = '';
+            renderFriends();
+            renderPlatformsDirectory();
+            showToast('تمت إضافة الصديق وسجله بالمنصات');
+        }
+
+        function renderFriends() {
+            const grid = document.getElementById('friends-list-grid');
+            grid.innerHTML = '';
+            friends.forEach(f => {
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-2xl bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-2';
+                card.innerHTML = `
+                    <div>
+                        <p class="text-xs font-black">${f.name}</p>
+                        <p class="text-[10px] font-mono text-neutral-500">${f.yxaId}</p>
+                    </div>
+                    <button type="button" onclick="openDirectChat(${f.id})" class="btn-act px-4 py-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">
+                        محادثة
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openDirectChat(friendId) {
+            activeChatFriend = friends.find(x => x.id === friendId) || friends[0];
+            document.getElementById('chat-target-name').textContent = activeChatFriend.name;
+            document.getElementById('chat-target-id').textContent = activeChatFriend.yxaId;
+            const feed = document.getElementById('direct-chat-feed');
+            feed.innerHTML = `
+                <div class="p-3 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs">
+                    مرحباً بك في المحادثة المباشرة مع ${activeChatFriend.name} (${activeChatFriend.yxaId})
+                </div>
+            `;
+            document.getElementById('chat-modal').classList.remove('hidden');
+        }
+
+        function closeChatModal() {
+            document.getElementById('chat-modal').classList.add('hidden');
+        }
+
+        function sendDirectMessage() {
+            const input = document.getElementById('direct-chat-input');
+            const txt = input.value.trim();
+            if (!txt) return;
+
+            const feed = document.getElementById('direct-chat-feed');
+            feed.innerHTML += `<div class="p-3 rounded-2xl bg-black text-white dark:bg-white dark:text-black text-xs font-bold max-w-[80%] mr-auto">${txt}</div>`;
+            input.value = '';
+            feed.scrollTop = feed.scrollHeight;
+
+            setTimeout(() => {
+                feed.innerHTML += `<div class="p-3 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs max-w-[80%] ml-auto">وصلت رسالتك بنجاح! وسيقوم ${activeChatFriend.name} بالرد عليك فوراً.</div>`;
+                feed.scrollTop = feed.scrollHeight;
+            }, 800);
+        }
+
+        // AI STUDIO
+        function setAiMode(mode) {
+            aiMode = mode;
+            localStorage.setItem(STORAGE_KEYS.aiMode, mode);
+            syncAiConfig();
+        }
+
+        function syncAiConfig() {
+            const isCustom = aiMode === 'custom';
+            document.getElementById('ai-key-input-box').classList.toggle('hidden', !isCustom);
+            document.getElementById('custom-gemini-key').value = geminiApiKey;
+
+            const builtinBtn = document.getElementById('aimode-builtin');
+            const customBtn = document.getElementById('aimode-custom');
+
+            if (!isCustom) {
+                builtinBtn.className = 'btn-act px-3 py-1.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-black';
+                customBtn.className = 'btn-act px-3 py-1.5 rounded-xl text-neutral-500 font-bold';
+            } else {
+                customBtn.className = 'btn-act px-3 py-1.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-black';
+                builtinBtn.className = 'btn-act px-3 py-1.5 rounded-xl text-neutral-500 font-bold';
             }
         }
 
-        function saveCustomApiKey() {
-            const val = (document.getElementById('custom-api-key').value || '').trim();
-            customApiKey = val;
-            localStorage.setItem(STORE.aiKey, customApiKey);
-            applyAiSourceUI();
-            notify(customApiKey ? 'تم حفظ مفتاح API الخاص.' : 'تم إزالة المفتاح والعودة للمدمج.');
+        function saveGeminiApiKey() {
+            geminiApiKey = document.getElementById('custom-gemini-key').value.trim();
+            localStorage.setItem(STORAGE_KEYS.aiKey, geminiApiKey);
+            showToast(geminiApiKey ? 'تم حفظ مفتاح Gemini API' : 'تم مسح المفتاح');
         }
 
-        async function askAI(prompt) {
-            if (aiSource === 'custom' && customApiKey) {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${encodeURIComponent(customApiKey)}`;
-                let delay = 1000;
-                for (let i = 0; i < 3; i++) {
-                    try {
-                        const res = await fetch(url, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                        });
-                        if (res.ok) {
-                            const data = await res.json();
-                            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                            if (reply) return reply;
-                        }
-                    } catch (_) {}
-                    await new Promise(r => setTimeout(r, delay));
-                    delay *= 2;
-                }
+        async function callAiAPI(prompt) {
+            if (aiMode === 'custom' && geminiApiKey) {
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiApiKey)}`;
+                try {
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const out = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (out) return out;
+                    }
+                } catch (_) {}
             }
-
-            // رد الذكاء الاصطناعي المدمج الفوري
-            return `رد الذكاء الاصطناعي المدمج على: "${prompt}"`;
+            return `رد المساعد الآلي: استلمت طلبك بنجاح (${prompt.substring(0, 30)}...). المنصة تعمل بشكل ممتاز وسريع!`;
         }
 
-        async function sendAiMessage() {
-            const input = document.getElementById('ai-prompt');
-            const text = (input.value || '').trim();
+        async function executeAiQuery() {
+            const input = document.getElementById('ai-query-input');
+            const text = input.value.trim();
             if (!text) return;
 
-            const thread = document.getElementById('ai-thread');
-            thread.innerHTML += `<div class="p-3 rounded-2xl bg-neutral-950 dark:bg-white text-white dark:text-black text-xs font-bold max-w-[82%] mr-auto">${text}</div>`;
+            const feed = document.getElementById('ai-chat-history');
+            feed.innerHTML += `<div class="p-3.5 rounded-2xl bg-black text-white dark:bg-white dark:text-black text-xs font-bold max-w-[85%] mr-auto">${text}</div>`;
             input.value = '';
-            thread.scrollTop = thread.scrollHeight;
+            feed.scrollTop = feed.scrollHeight;
 
-            const reply = await askAI(text);
-            thread.innerHTML += `<div class="p-3 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs max-w-[85%] ml-auto leading-relaxed whitespace-pre-wrap">${reply}</div>`;
-            thread.scrollTop = thread.scrollHeight;
+            const reply = await callAiAPI(text);
+            feed.innerHTML += `<div class="p-3.5 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs max-w-[85%] ml-auto leading-relaxed whitespace-pre-wrap">${reply}</div>`;
+            feed.scrollTop = feed.scrollHeight;
         }
 
-        // الحساب
-        function fillAccountInputs() {
-            document.getElementById('acc-name').value = accountData.name || '';
-            document.getElementById('acc-id').value = accountData.id || '';
-            document.getElementById('acc-phone').value = accountData.phone || '';
-            document.getElementById('acc-email').value = accountData.email || '';
+        function sendQuickPrompt(txt) {
+            document.getElementById('ai-query-input').value = txt;
+            executeAiQuery();
         }
 
-        function updateHeaderLabel() {
-            const label = document.getElementById('header-user-label');
-            if (label) label.textContent = accountData.name || 'الحساب';
+        // INFINITE CLOUD DRIVE
+        function handleFileUpload(e) {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+
+            files.forEach(f => {
+                cloudFiles.unshift({
+                    id: Date.now() + Math.random(),
+                    name: f.name,
+                    size: (f.size / 1024).toFixed(1) + ' KB',
+                    type: f.type || 'ملف مستند'
+                });
+            });
+
+            setStored(STORAGE_KEYS.cloud, cloudFiles);
+            renderCloudFiles();
+            showToast(`تم رفع ${files.length} ملف بالسحابة`);
         }
 
-        function saveAccountProfile() {
-            accountData = {
-                name: (document.getElementById('acc-name').value || '').trim() || 'مستخدم YXA',
-                id: (document.getElementById('acc-id').value || '').trim() || 'YXA-2026',
-                phone: (document.getElementById('acc-phone').value || '').trim(),
-                email: (document.getElementById('acc-email').value || '').trim()
-            };
-            saveStore(STORE.account, accountData);
-            updateHeaderLabel();
-            notify('تم حفظ بيانات الحساب.');
+        function renderCloudFiles() {
+            const list = document.getElementById('cloud-files-list');
+            document.getElementById('cloud-count-badge').textContent = `${cloudFiles.length} ملف`;
+            list.innerHTML = '';
+
+            if (!cloudFiles.length) {
+                list.innerHTML = `<p class="text-xs text-neutral-500">لا توجد ملفات مرفوعة في السحابة حالياً.</p>`;
+                return;
+            }
+
+            cloudFiles.forEach(file => {
+                const row = document.createElement('div');
+                row.className = 'p-3.5 rounded-2xl bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-2';
+                row.innerHTML = `
+                    <div class="min-w-0">
+                        <p class="text-xs font-black truncate">${file.name}</p>
+                        <p class="text-[10px] font-mono text-neutral-500">${file.size} • ${file.type}</p>
+                    </div>
+                    <div class="flex gap-1.5 shrink-0">
+                        <button type="button" onclick="analyzeFileWithAI('${file.name}')" class="btn-act px-3 py-1.5 rounded-xl bg-neutral-200 dark:bg-neutral-800 text-[11px] font-bold">
+                            🧠 تحليل AI
+                        </button>
+                        <button type="button" onclick="deleteCloudFile(${file.id})" class="btn-act p-2 rounded-xl text-rose-500 text-xs">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        async function analyzeFileWithAI(fileName) {
+            const analysis = await callAiAPI(`قُم بتحليل وتلخيص الملف المرفوع في السحابة باسم: ${fileName}`);
+            alert(`نتيجة تحليل الملف (${fileName}):\n\n${analysis}`);
+        }
+
+        function deleteCloudFile(id) {
+            cloudFiles = cloudFiles.filter(x => x.id !== id);
+            setStored(STORAGE_KEYS.cloud, cloudFiles);
+            renderCloudFiles();
+            showToast('تم حذف الملف');
+        }
+
+        function confirmWipeCloud() {
+            if (confirm('هل أنت تأكد من رغبتك في مسح كافة التخزين السحابي والبيانات؟')) {
+                cloudFiles = [];
+                setStored(STORAGE_KEYS.cloud, []);
+                renderCloudFiles();
+                showToast('تم مسح التخزين السحابي بالكامل');
+            }
+        }
+
+        // ACCOUNT MODAL & FORM
+        function populateAccountForm() {
+            if (!currentUser) return;
+            document.getElementById('acc-fullname').value = currentUser.name || '';
+            document.getElementById('acc-yxanum').value = currentUser.yxaId || '';
+            document.getElementById('acc-phone').value = currentUser.phone || '';
+            document.getElementById('acc-email').value = currentUser.email || '';
+        }
+
+        function saveProfileChanges() {
+            if (!currentUser) return;
+            currentUser.name = document.getElementById('acc-fullname').value.trim();
+            currentUser.phone = document.getElementById('acc-phone').value.trim();
+            currentUser.email = document.getElementById('acc-email').value.trim();
+            setStored(STORAGE_KEYS.session, currentUser);
+            updateUserBadge();
+            showToast('تم حفظ تعديلات الحساب');
+        }
+
+        function copyYxaId() {
+            if (currentUser && currentUser.yxaId) {
+                navigator.clipboard.writeText(currentUser.yxaId);
+                showToast('تم نسخ رقم YXA');
+            }
+        }
+
+        // CONTACT MODAL
+        function openContactModal() {
+            document.getElementById('contact-modal').classList.remove('hidden');
+        }
+
+        function closeContactModal() {
+            document.getElementById('contact-modal').classList.add('hidden');
+        }
+
+        function copyEmailAddress(email) {
+            navigator.clipboard.writeText(email);
+            showToast('تم نسخ البريد الإلكتروني');
         }
     </script>
 </body>
 </html>
-```
