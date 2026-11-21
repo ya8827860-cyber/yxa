@@ -62,6 +62,130 @@ pre{background:var(--sub);padding:.7rem;border-radius:.8rem;overflow:auto;direct
 </div></div>
 
 <!-- التطبيق -->
+<div id="app" hidden><div class="wrap">
+ <header class="row sp card" style="padding:.8rem 1rem">
+  <div class="row"><div class="logo" style="width:2.4rem;height:2.4rem;font-size:.75rem">YXA</div>
+   <div><div class="b900">تواصل <span id="u-yxa" class="mono sm mut"></span></div><div id="u-name" class="sm mut"></div></div></div>
+  <div class="row"><button class="btn" id="b-theme" title="المظهر">🌓</button><button class="btn" id="b-out" title="خروج">🚪</button></div>
+ </header>
+ <nav id="tabs" class="tabs"></nav>
+
+ <section id="t-home" class="tab on">
+  <div class="card stack"><div class="row sp"><b>الستوريات</b><button class="btn bp" id="st-add">+ ستوري</button></div><div id="stories" class="row" style="overflow-x:auto"></div></div>
+  <div class="card stack"><textarea id="post-in" class="inp" rows="2" maxlength="1000" placeholder="ماذا يدور في ذهنك؟" style="resize:none"></textarea>
+   <div class="row" style="justify-content:flex-end"><button class="btn" id="post-ai">✨ صياغة بالذكاء</button><button class="btn bp" id="post-add">نشر</button></div></div>
+  <div id="posts" class="stack"></div>
+ </section>
+
+ <section id="t-friends" class="tab">
+  <div class="card stack"><b>إضافة صديق برقم YXA</b>
+   <div class="row"><input id="f-in" class="inp mono" placeholder="YXA-123456" style="direction:ltr"><button class="btn bp" id="f-add">إضافة</button></div></div>
+  <div class="card stack"><b>الأصدقاء</b><div id="f-list" class="stack"></div></div>
+ </section>
+
+ <section id="t-ai" class="tab">
+  <div class="card stack"><b>🧠 الذكاء الاصطناعي (Gemini)</b>
+   <p class="sm mut">المفتاح يُحفظ في هذا المتصفح فقط ويُرسل لـ Google مباشرة.</p>
+   <div class="row"><input id="g-key" type="password" class="inp mono" placeholder="مفتاح Gemini API" autocomplete="off"><button class="btn bp" id="g-save">حفظ</button></div></div>
+  <div class="card stack"><div id="ai-feed" class="feed" style="min-height:220px;max-height:380px"></div>
+   <div class="row"><input id="ai-in" class="inp" placeholder="اكتب سؤالك..."><button class="btn bp" id="ai-send">إرسال</button></div></div>
+ </section>
+
+ <section id="t-me" class="tab">
+  <div class="card stack"><b>الملف الشخصي</b>
+   <div><div class="sm mut">الاسم</div><input id="a-name" class="inp" maxlength="60"></div>
+   <div><div class="sm mut">رقم YXA</div><input id="a-yxa" class="inp mono" readonly></div>
+   <div><div class="sm mut">البريد</div><input id="a-mail" class="inp" readonly></div>
+   <div class="row"><button class="btn bp" id="a-save">حفظ</button><button class="btn" id="a-copy">نسخ رقم YXA</button><button class="btn" id="b-contact">📞 التواصل</button></div></div>
+ </section>
+</div></div>
+
+<!-- نافذة عرض الستوري -->
+<div id="m-story" class="modal" hidden><div class="card stack" style="max-width:380px"><div class="row sp"><b id="s-by"></b><button class="btn" data-close>✕</button></div>
+ <p id="s-tx" style="padding:2rem 0;text-align:center;font-weight:700;white-space:pre-wrap;word-break:break-word"></p></div></div>
+
+<!-- نافذة إضافة ستوري -->
+<div id="m-add-story" class="modal" hidden><div class="card stack" style="max-width:400px">
+ <div class="row sp"><b>+ إضافة ستوري جديد</b><button class="btn" data-close>✕</button></div>
+ <textarea id="st-in" class="inp" rows="3" maxlength="300" placeholder="اكتب نص الستوري هنا..."></textarea>
+ <button id="st-save" class="btn bp" style="width:100%">نشر الستوري</button>
+</div></div>
+
+<!-- نافذة تأكيد الحذف -->
+<div id="m-del" class="modal" hidden><div class="card stack" style="max-width:340px;text-align:center">
+ <b>هل تريد حذف هذا المنشور؟</b>
+ <div class="row"><button id="del-yes" class="btn bp" style="flex:1">نعم، احذف</button><button class="btn" data-close style="flex:1">إلغاء</button></div>
+</div></div>
+
+<!-- نافذة التواصل المباشر -->
+<div id="m-contact" class="modal" hidden><div class="card stack" style="max-width:400px">
+ <div class="row sp"><b>📞 التواصل المباشر</b><button class="btn" data-close>✕</button></div>
+ <div class="item row sp"><div><div class="sm mut">واتساب مباشر</div><div class="b900 mono" dir="ltr">0563068840</div></div><a href="https://wa.me/966563068840" target="_blank" class="btn bp">مراسلة</a></div>
+ <div class="item row sp"><div><div class="sm mut">البريد الإلكتروني</div><div class="b900 mono" style="font-size:.75rem">ya8827860@gmail.com</div></div><button id="copy-mail" class="btn">نسخ</button></div>
+</div></div>
+
+<!-- نافذة المحادثة -->
+<div id="m-chat" class="modal" hidden><div class="card stack" style="max-width:520px">
+ <div class="row sp"><div><b id="c-name"></b><div id="c-id" class="sm mono mut"></div></div><button class="btn" data-close>✕</button></div>
+ <div id="c-feed" class="feed" style="height:16rem"></div>
+ <div class="row"><input id="c-in" class="inp" maxlength="1000" placeholder="اكتب رسالتك..."><button class="btn bp" id="c-send">إرسال</button></div></div></div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInWithPopup,GoogleAuthProvider,OAuthProvider,GithubAuthProvider,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,addDoc,query,where,orderBy,limit,onSnapshot,getDocs,arrayUnion,arrayRemove,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+/* ===== ضع إعدادات مشروعك هنا ===== */
+const firebaseConfig = {
+  apiKey: "PASTE_API_KEY",
+  authDomain: "PASTE_PROJECT.firebaseapp.com",
+  projectId: "PASTE_PROJECT_ID",
+  appId: "PASTE_APP_ID"
+};
+/* ================================== */
+
+const $=id=>document.getElementById(id);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+const toast=m=>{const t=el('div','toast',m);$('toasts').append(t);setTimeout(()=>t.remove(),3000)};
+const fmt=ts=>ts?.toDate?ts.toDate().toLocaleString('ar-SA',{dateStyle:'medium',timeStyle:'short'}):'الآن';
+const safeCopy=txt=>{
+  const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');toast('تم النسخ: '+txt)}catch{toast(txt)}
+  document.body.removeChild(ta);
+};
+const ERR={
+ 'auth/unauthorized-domain':'هذا النطاق غير مضاف: Firebase ← Authentication ← Settings ← Authorized domains',
+ 'auth/operation-not-supported-in-this-environment':'شغّل الصفحة من رابط http(s) أو localhost وليس كملف مباشر',
+ 'auth/popup-closed-by-user':'أُغلقت نافذة الدخول','auth/cancelled-popup-request':'أُغلقت نافذة الدخول',
+ 'auth/popup-blocked':'المتصفح حظر النافذة المنبثقة، اسمح بها ثم أعد المحاولة',
+ 'auth/operation-not-allowed':'طريقة الدخول هذه غير مفعّلة في Firebase',
+ 'auth/account-exists-with-different-credential':'هذا البريد مسجّل بطريقة دخول أخرى، استخدمها',
+ 'auth/invalid-credential':'بيانات الدخول غير صحيحة','auth/email-already-in-use':'البريد مستخدم مسبقاً',
+ 'auth/weak-password':'كلمة المرور ضعيفة (6 أحرف على الأقل)','auth/invalid-email':'البريد غير صالح',
+ 'auth/network-request-failed':'تعذّر الاتصال بالإنترنت','permission-denied':'لا توجد صلاحية — راجع قواعد Firestore'};
+const msg=e=>ERR[e.code]||e.message||String(e);
+
+/* المظهر */
+const setTheme=t=>{document.documentElement.classList.toggle('dark',t==='dark');try{localStorage.setItem('yxa_theme',t)}catch{}};
+setTheme((()=>{try{return localStorage.getItem('yxa_theme')}catch{}})()||'dark');
+$('b-theme').onclick=()=>setTheme(document.documentElement.classList.contains('dark')?'light':'dark');
+
+/* النوافذ */
+const openM=id=>$(id).hidden=false;
+const closeAll=()=>{document.querySelectorAll('.modal').forEach(m=>m.hidden=true);stopChat()};
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+$('b-contact').onclick=()=>openM('m-contact');
+$('copy-mail').onclick=()=>safeCopy('ya8827860@gmail.com');
+
+/* التبويبات */
+[['home','🏠 الرئيسية'],['friends','👥 الأصدقاء'],['ai','🧠 الذكاء'],['me','👤 حسابي']].forEach(([id,l])=>{
+  const b=el('button','btn'+(id==='home'?' bp':''),l);b.dataset.t=id;
+  b.onclick=()=>{document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('on',s.id==='t-'+id));document.querySelectorAll('#tabs .btn').forEach(x=>x.classList.toggle('bp',x===b))};
+  $('tabs').append(b);
+});
+
 /* ===== تهيئة Firebase أو الوضع المحلي الذكي ===== */
 let savedCfg=null;
 try{savedCfg=JSON.parse(localStorage.getItem('yxa_fb_cfg')||'null')}catch{}
