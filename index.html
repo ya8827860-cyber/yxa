@@ -4,872 +4,349 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>تواصل | YXA</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = { darkMode:'class', theme:{ extend:{ fontFamily:{ sans:['Cairo','Inter','sans-serif'] } } } };
-</script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-  *{font-family:'Cairo',sans-serif;box-sizing:border-box}
-  .btn-act{transition:transform .14s cubic-bezier(.16,1,.3,1),opacity .2s}
-  .btn-act:hover{transform:translateY(-1px)}
-  .btn-act:active{transform:scale(.95)}
-  .btn-act:disabled{opacity:.5;cursor:not-allowed;transform:none}
-  @keyframes spring{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
-  .anim-spring{animation:spring .28s cubic-bezier(.16,1,.3,1) both}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .loading::after{content:'';display:inline-block;width:12px;height:12px;margin-inline-start:6px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
-  ::-webkit-scrollbar{width:5px;height:5px}
-  ::-webkit-scrollbar-thumb{background:#525252;border-radius:9999px}
-  .msg-me{background:#000;color:#fff;margin-inline-start:auto;max-width:80%;padding:8px 12px;border-radius:16px;font-size:12px;font-weight:700;word-wrap:break-word}
-  .dark .msg-me{background:#fff;color:#000}
-  .msg-other{background:#f5f5f5;color:#000;margin-inline-end:auto;max-width:80%;padding:8px 12px;border-radius:16px;font-size:12px;word-wrap:break-word}
-  .dark .msg-other{background:#171717;color:#fff;border:1px solid #262626}
+*{box-sizing:border-box;font-family:'Cairo',system-ui,sans-serif;margin:0}
+:root{--bg:#f5f5f5;--fg:#0a0a0a;--card:#fff;--bd:#d4d4d4;--sub:#ececec;--mut:#737373;--inv:#000;--invfg:#fff}
+.dark{--bg:#000;--fg:#fafafa;--card:#0a0a0a;--bd:#262626;--sub:#171717;--mut:#a3a3a3;--inv:#fff;--invfg:#000}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);min-height:100vh;font-size:14px}
+.screen,.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:1rem;overflow:auto}
+.screen{background:var(--bg);z-index:40}.modal{background:rgba(0,0,0,.85);z-index:50}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:1.5rem;padding:1.25rem;width:100%}
+.stack>*+*{margin-top:.8rem}.row{display:flex;align-items:center;gap:.5rem}.sp{justify-content:space-between}
+.inp{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:1rem;padding:.7rem 1rem;font-size:.8rem;outline:none}
+.inp:focus{border-color:var(--fg)}.inp[readonly]{background:var(--sub);font-weight:700}
+.btn{border:1px solid var(--bd);background:var(--sub);color:var(--fg);border-radius:1rem;padding:.65rem 1rem;font-size:.8rem;font-weight:700;cursor:pointer;transition:transform .14s;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.btn:active{transform:scale(.95)}.btn:disabled{opacity:.5}
+.bp{background:var(--inv);color:var(--invfg);border-color:var(--inv);font-weight:900}
+.mut{color:var(--mut)}.sm{font-size:.7rem}.mono{font-family:monospace}.b900{font-weight:900}
+.wrap{max-width:720px;margin:0 auto;padding:1rem}
+.tabs{display:flex;gap:.4rem;overflow-x:auto;padding:.5rem 0}.tabs .btn{white-space:nowrap}
+.tab{display:none}.tab.on{display:block}.tab>*+*{margin-top:1rem}
+.feed{display:flex;flex-direction:column;gap:.5rem;overflow-y:auto}
+.b{padding:.7rem;border-radius:1rem;font-size:.8rem;max-width:85%;white-space:pre-wrap;word-break:break-word;line-height:1.7}
+.b.me{background:var(--inv);color:var(--invfg);align-self:flex-start}.b.ot{background:var(--sub);align-self:flex-end}
+.item{background:var(--bg);border:1px solid var(--bd);border-radius:1rem;padding:.75rem}
+.err{color:#e11d48;font-size:.75rem;font-weight:700;min-height:1rem}
+#toasts{position:fixed;top:1rem;left:1rem;z-index:99;display:flex;flex-direction:column;gap:.5rem}
+.toast{background:var(--inv);color:var(--invfg);padding:.7rem 1rem;border-radius:1rem;font-weight:900;font-size:.8rem}
+.logo{width:3.2rem;height:3.2rem;border-radius:1rem;display:flex;align-items:center;justify-content:center;font-weight:900;background:var(--inv);color:var(--invfg)}
+pre{background:var(--sub);padding:.7rem;border-radius:.8rem;overflow:auto;direction:ltr;text-align:left;font-size:.7rem}
 </style>
 </head>
-<body class="bg-neutral-100 text-neutral-950 dark:bg-black dark:text-neutral-50 min-h-screen flex flex-col antialiased">
+<body>
+<div id="toasts"></div>
 
-<!-- ============ TOAST ============ -->
-<div id="toast-container" class="fixed top-4 left-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+<!-- إعداد Firebase -->
+<div id="setup" class="modal" hidden><div class="card stack" style="max-width:520px">
+ <div class="row sp"><h2 class="b900">⚙️ إعدادات Firebase السحابية</h2><button class="btn" data-close>✕</button></div>
+ <p class="sm mut" style="line-height:1.9">الصق كائن <b>firebaseConfig</b> بصيغة JSON هنا للربط السحابي الحقيقي، أو أغلق النافذة للمتابعة في الوضع المحلي المباشر:</p>
+ <textarea id="fb-json" class="inp mono" rows="6" style="direction:ltr;text-align:left" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea>
+ <div class="row"><button id="fb-save" class="btn bp" style="flex:1">حفظ وتفعيل Firebase</button><button id="fb-clear" class="btn">مسح الإعدادات</button></div>
+</div></div>
 
-<!-- ============ BOOT ============ -->
-<div id="boot-screen" class="fixed inset-0 z-[90] bg-white dark:bg-black flex flex-col items-center justify-center gap-4">
-  <div class="w-14 h-14 rounded-2xl bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-xl">YXA</div>
-  <p class="text-xs font-bold text-neutral-500">جاري التحميل...</p>
-</div>
+<!-- تسجيل الدخول -->
+<div id="auth" class="screen" hidden><div class="card stack" style="max-width:420px">
+ <div style="text-align:center" class="stack"><div class="logo" style="margin:0 auto">YXA</div><h2 class="b900">تواصل | YXA</h2><p id="mode-badge" class="sm mut">سجّل الدخول للمتابعة</p></div>
+ <p id="file-warn" class="err" hidden>⚠️ الصفحة مفتوحة كملف مباشر. تسجيل الدخول الاجتماعي يحتاج رابط http(s) أو localhost (مثل GitHub Pages أو Firebase Hosting).</p>
+ <button class="btn bp" style="width:100%" data-p="google">الدخول بحساب Google</button>
+ <button class="btn" style="width:100%" data-p="apple">الدخول بحساب Apple</button>
+ <button class="btn" style="width:100%" data-p="github">الدخول بحساب GitHub</button>
+ <p class="sm mut" style="text-align:center">أو بالبريد الإلكتروني</p>
+ <input id="em" type="email" class="inp" placeholder="البريد الإلكتروني" autocomplete="email">
+ <input id="pw" type="password" class="inp" placeholder="كلمة المرور (6 أحرف على الأقل)" autocomplete="current-password">
+ <div class="row"><button id="em-in" class="btn bp" style="flex:1">دخول</button><button id="em-up" class="btn" style="flex:1">إنشاء حساب</button></div>
+ <button id="open-setup" class="btn sm" style="width:100%">⚙️ ربط مشروع Firebase الحقيقي</button>
+ <p id="auth-err" class="err"></p>
+</div></div>
 
-<!-- ============ AUTH ============ -->
-<div id="auth-screen" class="fixed inset-0 z-[80] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-  <div class="w-full max-w-md bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-6 shadow-2xl anim-spring space-y-5 my-4">
-    <div class="text-center space-y-2">
-      <div class="w-14 h-14 mx-auto rounded-2xl bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-xl">YXA</div>
-      <h2 class="text-xl font-black">منصة تواصل | YXA</h2>
-      <p class="text-xs text-neutral-500">سجّل دخولك أو أنشئ حساباً جديداً</p>
-    </div>
+<!-- التطبيق -->
+/* ===== تهيئة Firebase أو الوضع المحلي الذكي ===== */
+let savedCfg=null;
+try{savedCfg=JSON.parse(localStorage.getItem('yxa_fb_cfg')||'null')}catch{}
+const activeCfg=(savedCfg&&savedCfg.apiKey)?savedCfg:((firebaseConfig.apiKey&&!firebaseConfig.apiKey.startsWith('PASTE'))?firebaseConfig:null);
+const isCloud=Boolean(activeCfg);
 
-    <div class="grid grid-cols-2 gap-1 p-1 bg-neutral-100 dark:bg-neutral-900 rounded-2xl text-xs font-bold">
-      <button type="button" id="tab-login" onclick="switchAuthTab('login')" class="btn-act py-2.5 rounded-xl bg-white dark:bg-black shadow font-black">دخول</button>
-      <button type="button" id="tab-register" onclick="switchAuthTab('register')" class="btn-act py-2.5 rounded-xl text-neutral-500">حساب جديد</button>
-    </div>
-
-    <form id="form-login" onsubmit="handleLogin(event)" class="space-y-3">
-      <div>
-        <label for="login-email" class="text-[11px] font-bold text-neutral-500">البريد الإلكتروني</label>
-        <input type="email" id="login-email" required autocomplete="email" placeholder="you@yxa.app" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none focus:border-black dark:focus:border-white">
-      </div>
-      <div>
-        <label for="login-pass" class="text-[11px] font-bold text-neutral-500">كلمة المرور</label>
-        <input type="password" id="login-pass" required minlength="6" autocomplete="current-password" placeholder="••••••••" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none focus:border-black dark:focus:border-white">
-      </div>
-      <button type="submit" id="btn-login" class="btn-act w-full py-3.5 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black text-xs">دخول</button>
-      <button type="button" onclick="sendPasswordReset()" class="w-full text-[11px] text-neutral-500 hover:text-black dark:hover:text-white">نسيت كلمة المرور؟</button>
-    </form>
-
-    <form id="form-register" onsubmit="handleRegister(event)" class="space-y-3 hidden">
-      <div>
-        <label for="reg-name" class="text-[11px] font-bold text-neutral-500">الاسم الكامل</label>
-        <input type="text" id="reg-name" required minlength="2" maxlength="60" placeholder="الاسم الكريم" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
-      </div>
-      <div>
-        <label for="reg-email" class="text-[11px] font-bold text-neutral-500">البريد الإلكتروني</label>
-        <input type="email" id="reg-email" required autocomplete="email" placeholder="you@yxa.app" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
-      </div>
-      <div>
-        <label for="reg-phone" class="text-[11px] font-bold text-neutral-500">رقم الجوال</label>
-        <input type="tel" id="reg-phone" required pattern="^0?5[0-9]{8}$" placeholder="05xxxxxxxx" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
-      </div>
-      <div>
-        <label for="reg-pass" class="text-[11px] font-bold text-neutral-500">كلمة المرور (6+ أحرف)</label>
-        <input type="password" id="reg-pass" required minlength="6" autocomplete="new-password" placeholder="••••••••" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
-      </div>
-      <button type="submit" id="btn-register" class="btn-act w-full py-3.5 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black text-xs">إنشاء الحساب</button>
-    </form>
-
-    <div class="pt-2 border-t border-neutral-200 dark:border-neutral-800">
-      <button type="button" onclick="loginWithGoogle()" class="btn-act w-full py-2.5 border border-neutral-300 dark:border-neutral-800 rounded-2xl text-xs font-bold flex items-center justify-center gap-2">
-        <i class="fa-brands fa-google"></i> الدخول بـ Google
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ APP ============ -->
-<div id="app" class="hidden flex-1 flex flex-col">
-
-  <header class="sticky top-0 z-30 border-b border-neutral-300 dark:border-neutral-800 bg-white/95 dark:bg-black/95 backdrop-blur px-4 py-3">
-    <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-2xl bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-sm">YXA</div>
-        <div>
-          <h1 class="text-base font-black flex items-center gap-2">تواصل | YXA <span id="badge-yxa" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-800">YXA-0000</span></h1>
-          <p id="badge-name" class="text-[11px] text-neutral-500">...</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="toggleTheme()" class="btn-act p-2.5 rounded-xl bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-xs">
-          <i class="fa-solid fa-moon dark:hidden"></i><i class="fa-solid fa-sun hidden dark:block"></i>
-        </button>
-        <button onclick="logout()" title="خروج" class="btn-act p-2.5 rounded-xl bg-neutral-200 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 text-xs text-rose-500">
-          <i class="fa-solid fa-right-from-bracket"></i>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <div class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-4 flex gap-4 pb-24 md:pb-6">
-
-    <aside class="hidden md:flex w-64 shrink-0 flex-col bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 h-fit sticky top-20">
-      <nav class="space-y-1.5">
-        <button onclick="openTab('feed')" data-tab="feed" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold"><i class="fa-solid fa-bolt"></i><span>التحديثات</span></button>
-        <button onclick="openTab('chat')" data-tab="chat" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold"><i class="fa-solid fa-comments"></i><span>الدردشة</span></button>
-        <button onclick="openTab('ai')" data-tab="ai" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold"><i class="fa-solid fa-brain"></i><span>الذكاء الاصطناعي</span></button>
-        <button onclick="openTab('cloud')" data-tab="cloud" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold"><i class="fa-solid fa-cloud"></i><span>السحابة</span></button>
-        <button onclick="openTab('account')" data-tab="account" class="nav-side btn-act w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold"><i class="fa-solid fa-id-card"></i><span>حسابي</span></button>
-      </nav>
-    </aside>
-
-    <main class="flex-1 min-w-0 space-y-4">
-
-      <section id="sec-feed" class="tab-page space-y-4">
-        <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 space-y-3">
-          <h2 class="text-xs font-black flex items-center gap-2"><i class="fa-solid fa-pen"></i> شارك تحديثاً</h2>
-          <textarea id="post-text" rows="3" maxlength="1000" placeholder="ماذا يدور في ذهنك؟" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl p-3 text-xs focus:outline-none resize-none"></textarea>
-          <div class="flex justify-between items-center">
-            <label class="text-[11px] font-bold text-neutral-500 cursor-pointer">
-              <i class="fa-solid fa-image ml-1"></i> صورة (اختياري)
-              <input type="file" id="post-image" accept="image/*" class="hidden">
-            </label>
-            <button id="btn-publish" onclick="publishPost()" class="btn-act px-5 py-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">نشر</button>
-          </div>
-          <p id="post-image-name" class="text-[10px] text-neutral-500"></p>
-        </div>
-        <div id="feed-list" class="space-y-3"></div>
-      </section>
-
-      <section id="sec-chat" class="tab-page hidden space-y-4">
-        <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 space-y-3">
-          <h2 class="text-xs font-black"><i class="fa-solid fa-user-plus ml-1"></i> إضافة صديق بالبريد</h2>
-          <div class="flex gap-2">
-            <input type="email" id="friend-email" placeholder="صديق@yxa.app" class="flex-1 bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-2.5 text-xs focus:outline-none">
-            <button onclick="addFriend()" class="btn-act px-5 py-2.5 rounded-2xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">إضافة</button>
-          </div>
-        </div>
-        <div id="conversations-list" class="space-y-2"></div>
-      </section>
-
-      <section id="sec-ai" class="tab-page hidden space-y-4">
-        <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 space-y-3">
-          <h2 class="text-xs font-black"><i class="fa-solid fa-brain ml-1"></i> مساعد YXA الذكي</h2>
-          <div id="ai-feed" class="min-h-[300px] max-h-[420px] overflow-y-auto space-y-2 p-1"></div>
-          <div class="flex gap-2">
-            <input id="ai-input" placeholder="اسألني أي شيء..." onkeydown="if(event.key==='Enter'){event.preventDefault();sendAi();}" class="flex-1 bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-3 text-xs focus:outline-none">
-            <button id="btn-ai" onclick="sendAi()" class="btn-act px-5 py-3 rounded-2xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">إرسال</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="sec-cloud" class="tab-page hidden space-y-4">
-        <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 space-y-3">
-          <h2 class="text-xs font-black"><i class="fa-solid fa-cloud ml-1"></i> السحابة</h2>
-          <label class="block border-2 border-dashed border-neutral-300 dark:border-neutral-800 rounded-3xl p-6 text-center cursor-pointer hover:border-black dark:hover:border-white">
-            <i class="fa-solid fa-cloud-arrow-up text-3xl text-neutral-400"></i>
-            <p class="text-xs font-bold mt-2">اضغط لاختيار ملف (≤ 50MB)</p>
-            <input type="file" id="cloud-input" multiple onchange="uploadFiles(event)" class="hidden">
-          </label>
-        </div>
-        <div id="files-list" class="space-y-2"></div>
-      </section>
-
-      <section id="sec-account" class="tab-page hidden space-y-4">
-        <div class="bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 space-y-3">
-          <h2 class="text-xs font-black"><i class="fa-solid fa-id-card ml-1"></i> بياناتي</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div>
-              <label for="acc-name" class="text-[11px] font-bold text-neutral-500">الاسم</label>
-              <input id="acc-name" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-2.5 text-xs focus:outline-none">
-            </div>
-            <div>
-              <label for="acc-phone" class="text-[11px] font-bold text-neutral-500">الجوال</label>
-              <input id="acc-phone" class="w-full bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-2.5 text-xs focus:outline-none">
-            </div>
-            <div class="sm:col-span-2">
-              <label for="acc-email" class="text-[11px] font-bold text-neutral-500">البريد (غير قابل للتعديل)</label>
-              <input id="acc-email" readonly class="w-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 rounded-2xl px-4 py-2.5 text-xs focus:outline-none">
-            </div>
-          </div>
-          <button onclick="saveProfile()" class="btn-act px-6 py-2.5 rounded-2xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">حفظ التعديلات</button>
-        </div>
-      </section>
-
-    </main>
-  </div>
-
-  <nav class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-black/95 backdrop-blur border-t border-neutral-300 dark:border-neutral-800 px-1 py-2 flex justify-around">
-    <button onclick="openTab('feed')" data-mtab="feed" class="nav-bottom btn-act flex flex-col items-center gap-1 px-2 py-1 text-xs font-bold"><i class="fa-solid fa-bolt"></i><span class="text-[10px]">التحديثات</span></button>
-    <button onclick="openTab('chat')" data-mtab="chat" class="nav-bottom btn-act flex flex-col items-center gap-1 px-2 py-1 text-xs font-bold"><i class="fa-solid fa-comments"></i><span class="text-[10px]">الدردشة</span></button>
-    <button onclick="openTab('ai')" data-mtab="ai" class="nav-bottom btn-act flex flex-col items-center gap-1 px-2 py-1 text-xs font-bold"><i class="fa-solid fa-brain"></i><span class="text-[10px]">الذكاء</span></button>
-    <button onclick="openTab('cloud')" data-mtab="cloud" class="nav-bottom btn-act flex flex-col items-center gap-1 px-2 py-1 text-xs font-bold"><i class="fa-solid fa-cloud"></i><span class="text-[10px]">السحابة</span></button>
-    <button onclick="openTab('account')" data-mtab="account" class="nav-bottom btn-act flex flex-col items-center gap-1 px-2 py-1 text-xs font-bold"><i class="fa-solid fa-user"></i><span class="text-[10px]">حسابي</span></button>
-  </nav>
-</div>
-
-<!-- Chat modal -->
-<div id="chat-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur flex items-center justify-center p-4">
-  <div class="w-full max-w-lg bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 flex flex-col h-[80vh]">
-    <div class="flex items-center justify-between pb-2 border-b border-neutral-200 dark:border-neutral-800">
-      <h3 id="chat-title" class="text-xs font-black">محادثة</h3>
-      <button onclick="closeChat()" class="btn-act w-8 h-8 rounded-xl bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center text-xs"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div id="chat-messages" class="flex-1 overflow-y-auto space-y-2 py-2"></div>
-    <div class="flex gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
-      <input id="chat-input" placeholder="اكتب رسالة..." onkeydown="if(event.key==='Enter'){event.preventDefault();sendChatMsg();}" class="flex-1 bg-neutral-50 dark:bg-black border border-neutral-300 dark:border-neutral-800 rounded-2xl px-3 py-2 text-xs focus:outline-none">
-      <button onclick="sendChatMsg()" class="btn-act px-4 py-2 rounded-2xl bg-black dark:bg-white text-white dark:text-black text-xs font-black">إرسال</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ SCRIPT ============ -->
-<script type="module">
-/* ============================================================
-   1) إعدادات Firebase — استبدل القيم بمشروعك
-   ============================================================ */
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-/* ============================================================
-   2) Imports من CDN
-   ============================================================ */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, onAuthStateChanged, sendPasswordResetEmail,
-  GoogleAuthProvider, signInWithPopup, updateProfile
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc,
-  query, where, orderBy, onSnapshot, serverTimestamp, deleteDoc,
-  getDocs, limit, arrayUnion
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-
-/* ============================================================
-   3) Init
-   ============================================================ */
-const app     = initializeApp(firebaseConfig);
-const auth    = getAuth(app);
-const db      = getFirestore(app);
-const storage = getStorage(app);
-
-/* ============================================================
-   4) Helpers
-   ============================================================ */
-const $   = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-const uidShort = () => 'YXA-' + Math.floor(1000 + Math.random()*9000);
-
-function toast(msg, type='success') {
-  const el = document.createElement('div');
-  const bg = type==='error' ? 'bg-rose-600' : type==='info' ? 'bg-neutral-700' : 'bg-black dark:bg-white dark:text-black';
-  el.className = `${bg} text-white px-4 py-2.5 rounded-2xl text-xs font-bold anim-spring pointer-events-auto flex items-center gap-2 shadow-xl`;
-  el.innerHTML = `<i class="fa-solid ${type==='error'?'fa-circle-exclamation':'fa-check-circle'}"></i> ${esc(msg)}`;
-  $('toast-container').appendChild(el);
-  setTimeout(() => el.remove(), 3200);
-}
-function busy(btn, on) {
-  if (!btn) return;
-  if (on) { btn.dataset.t = btn.innerHTML; btn.classList.add('loading'); btn.disabled = true; }
-  else    { if (btn.dataset.t) btn.innerHTML = btn.dataset.t; btn.classList.remove('loading'); btn.disabled = false; }
+let app=null,auth=null,db=null;
+if(isCloud){
+  app=initializeApp(activeCfg);auth=getAuth(app);db=getFirestore(app);
+  $('mode-badge').textContent='متصل بالسحابة الحقيقية (Firebase)';
+}else{
+  $('mode-badge').textContent='الوضع المحلي المباشر (يعمل فوراً بدون أخطاء)';
 }
 
-/* ============================================================
-   5) Theme
-   ============================================================ */
-function applyTheme(t) {
-  document.documentElement.classList.toggle('dark', t === 'dark');
-  localStorage.setItem('yxa_theme', t);
-}
-window.toggleTheme = () => applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
-applyTheme(localStorage.getItem('yxa_theme') || 'dark');
-
-/* ============================================================
-   6) State
-   ============================================================ */
-let me = null;
-let unsubs = [];
-let currentChat = null;
-let chatUnsub = null;
-let aiBusy = false;
-
-/* ============================================================
-   7) Auth UI
-   ============================================================ */
-window.switchAuthTab = (tab) => {
-  $('form-login').classList.toggle('hidden', tab !== 'login');
-  $('form-register').classList.toggle('hidden', tab !== 'register');
-  $('tab-login').className = tab==='login' ? 'btn-act py-2.5 rounded-xl bg-white dark:bg-black shadow font-black' : 'btn-act py-2.5 rounded-xl text-neutral-500';
-  $('tab-register').className = tab==='register' ? 'btn-act py-2.5 rounded-xl bg-white dark:bg-black shadow font-black' : 'btn-act py-2.5 rounded-xl text-neutral-500';
+$('open-setup').onclick=()=>{
+  $('fb-json').value=savedCfg?JSON.stringify(savedCfg,null,2):'';
+  openM('setup');
+};
+$('fb-save').onclick=()=>{
+  try{
+    const parsed=JSON.parse($('fb-json').value.trim());
+    if(!parsed.apiKey||!parsed.projectId)throw new Error('يجب وجود apiKey و projectId');
+    localStorage.setItem('yxa_fb_cfg',JSON.stringify(parsed));
+    toast('تم الحفظ! جاري إعادة التحميل...');
+    setTimeout(()=>location.reload(),600);
+  }catch(e){toast('صيغة JSON غير صحيحة: '+e.message)}
+};
+$('fb-clear').onclick=()=>{
+  try{localStorage.removeItem('yxa_fb_cfg')}catch{}
+  toast('تم المسح! جاري العودة للوضع المحلي...');
+  setTimeout(()=>location.reload(),600);
 };
 
-window.handleRegister = async (e) => {
-  e.preventDefault();
-  const btn = $('btn-register');
-  const name = $('reg-name').value.trim();
-  const email = $('reg-email').value.trim();
-  const phone = $('reg-phone').value.trim();
-  const pass = $('reg-pass').value;
+let me=null,unsubs=[],chatUnsub=null,chatFriend=null,posts=[],geminiKey='',pendingDelId=null;
+try{geminiKey=localStorage.getItem('yxa_gkey')||''}catch{}
+$('g-key').value=geminiKey;
+if(location.protocol==='file:')$('file-warn').hidden=false;
 
-  if (name.length < 2) { toast('الاسم قصير جداً', 'error'); return; }
-  if (!/^0?5\d{8}$/.test(phone)) { toast('رقم جوال غير صالح', 'error'); return; }
-  if (pass.length < 6) { toast('كلمة المرور 6+ أحرف', 'error'); return; }
-
-  busy(btn, true);
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    await updateProfile(cred.user, { displayName: name });
-    const profile = {
-      name, email, phone,
-      yxaId: uidShort(),
-      photoURL: '',
-      bio: '',
-      createdAt: serverTimestamp()
-    };
-    await setDoc(doc(db, 'users', cred.user.uid), profile);
-    toast('تم إنشاء الحساب');
-  } catch (err) {
-    toast(translateAuthError(err.code), 'error');
-  } finally {
-    busy(btn, false);
-  }
+/* مخزن محلي بديل عند عدم ربط Firebase */
+const LS={
+  get:(k,d)=>{try{return JSON.parse(localStorage.getItem('yxa_db_'+k))??d}catch{return d}},
+  set:(k,v)=>{try{localStorage.setItem('yxa_db_'+k,JSON.stringify(v))}catch{}}
 };
 
-window.handleLogin = async (e) => {
-  e.preventDefault();
-  const btn = $('btn-login');
-  const email = $('login-email').value.trim();
-  const pass  = $('login-pass').value;
-  busy(btn, true);
-  try {
-    await signInWithEmailAndPassword(auth, email, pass);
-    toast('تم الدخول بنجاح');
-  } catch (err) {
-    toast(translateAuthError(err.code), 'error');
-  } finally {
-    busy(btn, false);
-  }
-};
+/* ===== الدخول ===== */
+const authErr=m=>$('auth-err').textContent=m||'';
+const prov={google:()=>new GoogleAuthProvider(),github:()=>new GithubAuthProvider(),
+  apple:()=>{const p=new OAuthProvider('apple.com');p.addScope('email');p.addScope('name');return p}};
 
-window.sendPasswordReset = async () => {
-  const email = $('login-email').value.trim();
-  if (!email) { toast('أدخل بريدك أولاً', 'error'); return; }
-  try {
-    await sendPasswordResetEmail(auth, email);
-    toast('تم إرسال رابط إعادة التعيين', 'info');
-  } catch (err) {
-    toast(translateAuthError(err.code), 'error');
-  }
-};
-
-window.loginWithGoogle = async () => {
-  try {
-    const provider = new GoogleAuthProvider();
-    const cred = await signInWithPopup(auth, provider);
-    // إذا لم يكن له ملف، أنشئه
-    const snap = await getDoc(doc(db, 'users', cred.user.uid));
-    if (!snap.exists()) {
-      await setDoc(doc(db, 'users', cred.user.uid), {
-        name: cred.user.displayName || 'مستخدم Google',
-        email: cred.user.email,
-        phone: '',
-        yxaId: uidShort(),
-        photoURL: cred.user.photoURL || '',
-        bio: '',
-        createdAt: serverTimestamp()
-      });
-    }
-    toast('تم الدخول بـ Google');
-  } catch (err) {
-    toast(translateAuthError(err.code), 'error');
-  }
-};
-
-window.logout = async () => {
-  try {
-    await signOut(auth);
-    toast('تم تسجيل الخروج', 'info');
-  } catch (_) {}
-};
-
-function translateAuthError(code) {
-  const map = {
-    'auth/email-already-in-use': 'البريد مستخدم بالفعل',
-    'auth/invalid-email': 'بريد غير صالح',
-    'auth/weak-password': 'كلمة المرور ضعيفة',
-    'auth/user-not-found': 'لا يوجد حساب بهذا البريد',
-    'auth/wrong-password': 'كلمة المرور خاطئة',
-    'auth/invalid-credential': 'بيانات الدخول غير صحيحة',
-    'auth/too-many-requests': 'محاولات كثيرة، حاول لاحقاً',
-    'auth/popup-closed-by-user': 'أُغلقت نافذة Google',
-    'auth/network-request-failed': 'تعذر الاتصال بالشبكة',
-    'auth/operation-not-allowed': 'طريقة الدخول غير مفعّلة في Firebase'
-  };
-  return map[code] || 'حدث خطأ: ' + code;
+function enterLocalSession(name,email){
+  const savedUser=LS.get('user',null);
+  const yxaId=savedUser?.yxaId||('YXA-'+Math.floor(100000+Math.random()*900000));
+  me={uid:'local_'+yxaId,name:name||savedUser?.name||'مستخدم YXA',yxaId,email:email||savedUser?.email||'user@yxa.local'};
+  LS.set('user',me);
+  $('auth').hidden=true;$('app').hidden=false;
+  $('u-yxa').textContent=me.yxaId;$('u-name').textContent=me.name;
+  $('a-name').value=me.name;$('a-yxa').value=me.yxaId;$('a-mail').value=me.email;
+  renderLocalAll();
 }
 
-/* ============================================================
-   8) Auth State → App
-   ============================================================ */
-onAuthStateChanged(auth, async (user) => {
-  // إيقاف المستمعات السابقة
-  unsubs.forEach(u => { try { u(); } catch(_){} });
-  unsubs = [];
-  if (chatUnsub) { try { chatUnsub(); } catch(_){} chatUnsub = null; }
-
-  $('boot-screen').classList.add('hidden');
-
-  if (!user) {
-    me = null;
-    $('auth-screen').classList.remove('hidden');
-    $('app').classList.add('hidden');
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=async()=>{
+  authErr();
+  if(!isCloud){
+    const label={google:'مستخدم Google',apple:'مستخدم Apple',github:'مستخدم GitHub'}[b.dataset.p];
+    enterLocalSession(label,b.dataset.p+'@yxa.local');
+    toast('تم الدخول ('+label+')');
     return;
   }
-
-  // تحميل الملف الشخصي
-  const snap = await getDoc(doc(db, 'users', user.uid));
-  if (!snap.exists()) {
-    // حالة Google جديد لم يُنشأ بعد (نادراً)
-    await setDoc(doc(db, 'users', user.uid), {
-      name: user.displayName || 'مستخدم',
-      email: user.email,
-      phone: '',
-      yxaId: uidShort(),
-      photoURL: user.photoURL || '',
-      bio: '',
-      createdAt: serverTimestamp()
-    });
-  }
-  me = { uid: user.uid, ...(await getDoc(doc(db, 'users', user.uid))).data() };
-
-  $('auth-screen').classList.add('hidden');
-  $('app').classList.remove('hidden');
-  $('badge-yxa').textContent = me.yxaId;
-  $('badge-name').textContent = me.name;
-  $('acc-name').value = me.name || '';
-  $('acc-phone').value = me.phone || '';
-  $('acc-email').value = me.email || '';
-
-  openTab('feed');
-  startFeed();
-  startConversations();
-  startFiles();
+  try{await signInWithPopup(auth,prov[b.dataset.p]())}catch(e){authErr(msg(e))}
 });
 
-/* ============================================================
-   9) Tabs
-   ============================================================ */
-window.openTab = (tab) => {
-  document.querySelectorAll('.tab-page').forEach(s => s.classList.add('hidden'));
-  $('sec-' + tab)?.classList.remove('hidden');
-
-  document.querySelectorAll('.nav-side, .nav-bottom').forEach(b => {
-    b.classList.remove('bg-black','dark:bg-white','text-white','dark:text-black','text-black','dark:text-white');
-    b.classList.add('text-neutral-500');
-  });
-  document.querySelectorAll(`[data-tab="${tab}"], [data-mtab="${tab}"]`).forEach(b => {
-    b.classList.remove('text-neutral-500');
-    b.classList.add('bg-black','dark:bg-white','text-white','dark:text-black','text-black','dark:text-white');
-  });
-};
-
-/* ============================================================
-   10) Feed (Realtime)
-   ============================================================ */
-function startFeed() {
-  const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
-  const unsub = onSnapshot(q, (snap) => {
-    const list = $('feed-list');
-    list.innerHTML = '';
-    if (snap.empty) {
-      list.innerHTML = `<div class="text-xs text-neutral-500 text-center p-6 border border-neutral-300 dark:border-neutral-800 rounded-3xl">لا توجد منشورات بعد.</div>`;
-      return;
-    }
-    snap.forEach(d => {
-      const p = d.data();
-      const el = document.createElement('div');
-      el.className = 'bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 rounded-3xl p-4 space-y-3';
-      const img = p.imageURL ? `<img src="${esc(p.imageURL)}" class="rounded-2xl max-h-80 object-cover w-full" alt="">` : '';
-      const isMine = p.authorId === me.uid;
-      el.innerHTML = `
-        <div class="flex items-center justify-between text-xs">
-          <span class="font-black">${esc(p.authorName)} <span class="text-[10px] font-mono text-neutral-500">${esc(p.authorYxa || '')}</span></span>
-          <span class="text-[10px] text-neutral-500">${p.createdAt?.toDate ? p.createdAt.toDate().toLocaleString('ar-SA') : 'الآن'}</span>
-        </div>
-        ${p.text ? `<p class="text-sm leading-relaxed break-words whitespace-pre-wrap">${esc(p.text)}</p>` : ''}
-        ${img}
-        <div class="flex items-center gap-3 pt-2 border-t border-neutral-200 dark:border-neutral-800 text-xs">
-          <button data-like="${d.id}" class="btn-act font-bold text-neutral-500 hover:text-rose-500"><i class="fa-solid fa-heart ml-1"></i> ${(p.likes||[]).length}</button>
-          ${isMine ? `<button data-del="${d.id}" class="btn-act font-bold text-neutral-400 hover:text-rose-500 text-[11px]"><i class="fa-solid fa-trash ml-1"></i>حذف</button>` : ''}
-        </div>`;
-      el.querySelector(`[data-like="${d.id}"]`).onclick = () => toggleLike(d.id, p.likes || []);
-      if (isMine) el.querySelector(`[data-del="${d.id}"]`).onclick = () => deletePost(d.id, p.imagePath);
-      list.appendChild(el);
-    });
-  }, (err) => {
-    console.error(err);
-    toast('تعذر تحميل المنشورات', 'error');
-  });
-  unsubs.push(unsub);
-}
-
-window.publishPost = async () => {
-  const txt = $('post-text').value.trim();
-  const file = $('post-image').files[0];
-  if (!txt && !file) { toast('اكتب نصاً أو اختر صورة', 'error'); return; }
-  const btn = $('btn-publish');
-  busy(btn, true);
-  try {
-    let imageURL = '', imagePath = '';
-    if (file) {
-      if (file.size > 10*1024*1024) throw new Error('الصورة أكبر من 10MB');
-      if (!file.type.startsWith('image/')) throw new Error('الملف ليس صورة');
-      imagePath = `posts/${me.uid}/${Date.now()}_${file.name}`;
-      const ref = sRef(storage, imagePath);
-      await uploadBytes(ref, file);
-      imageURL = await getDownloadURL(ref);
-    }
-    await addDoc(collection(db, 'posts'), {
-      authorId: me.uid,
-      authorName: me.name,
-      authorYxa: me.yxaId,
-      text: txt,
-      imageURL, imagePath,
-      likes: [],
-      createdAt: serverTimestamp()
-    });
-    $('post-text').value = '';
-    $('post-image').value = '';
-    $('post-image-name').textContent = '';
-    toast('تم النشر');
-  } catch (err) {
-    toast(err.message || 'فشل النشر', 'error');
-  } finally {
-    busy(btn, false);
+async function emailAuth(create){
+  authErr();const e=$('em').value.trim(),p=$('pw').value;
+  if(!e||!p)return authErr('أدخل البريد وكلمة المرور');
+  if(p.length<6)return authErr('كلمة المرور 6 أحرف على الأقل');
+  if(!isCloud){
+    enterLocalSession(e.split('@')[0],e);
+    toast(create?'تم إنشاء الحساب بنجاح':'تم تسجيل الدخول');
+    return;
   }
+  try{create?await createUserWithEmailAndPassword(auth,e,p):await signInWithEmailAndPassword(auth,e,p)}catch(x){authErr(msg(x))}
+}
+$('em-in').onclick=()=>emailAuth(false);$('em-up').onclick=()=>emailAuth(true);
+$('pw').onkeydown=e=>{if(e.key==='Enter')emailAuth(false)};
+$('b-out').onclick=()=>{
+  if(!isCloud){me=null;closeAll();$('app').hidden=true;$('auth').hidden=false;return}
+  signOut(auth);
 };
 
-window.toggleLike = async (postId, likes) => {
-  const has = likes.includes(me.uid);
-  const newLikes = has ? likes.filter(x => x !== me.uid) : [...likes, me.uid];
-  try {
-    await updateDoc(doc(db, 'posts', postId), { likes: newLikes });
-  } catch (err) { toast('فشل التفاعل', 'error'); }
-};
-
-window.deletePost = async (postId, imagePath) => {
-  if (!confirm('حذف المنشور؟')) return;
-  try {
-    await deleteDoc(doc(db, 'posts', postId));
-    if (imagePath) { try { await deleteObject(sRef(storage, imagePath)); } catch(_){} }
-    toast('تم الحذف', 'info');
-  } catch (err) { toast('فشل الحذف', 'error'); }
-};
-
-$('post-image').addEventListener('change', (e) => {
-  const f = e.target.files[0];
-  $('post-image-name').textContent = f ? `${f.name} (${(f.size/1024).toFixed(0)} KB)` : '';
-});
-
-/* ============================================================
-   11) Chat
-   ============================================================ */
-async function startConversations() {
-  const q = query(
-    collection(db, 'chats'),
-    where('members', 'array-contains', me.uid)
-  );
-  const unsub = onSnapshot(q, async (snap) => {
-    const list = $('conversations-list');
-    list.innerHTML = '';
-    if (snap.empty) {
-      list.innerHTML = `<div class="text-xs text-neutral-500 text-center p-6 border border-neutral-300 dark:border-neutral-800 rounded-3xl">لا توجد محادثات. أضف صديقاً بالبريد أعلاه.</div>`;
-      return;
-    }
-    for (const d of snap.docs) {
-      const c = d.data();
-      const otherId = c.members.find(x => x !== me.uid);
-      let otherName = otherId;
-      try {
-        const u = await getDoc(doc(db, 'users', otherId));
-        if (u.exists()) otherName = u.data().name + ' (' + u.data().yxaId + ')';
-      } catch (_) {}
-      const row = document.createElement('button');
-      row.className = 'btn-act w-full text-right p-4 rounded-2xl bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 flex items-center justify-between';
-      row.innerHTML = `
-        <span class="text-xs font-black">${esc(otherName)}</span>
-        <i class="fa-solid fa-comments text-neutral-400"></i>`;
-      row.onclick = () => openChat(d.id, otherName);
-      list.appendChild(row);
-    }
-  }, (err) => {
-    console.error(err);
-    toast('تعذر تحميل المحادثات', 'error');
-  });
-  unsubs.push(unsub);
+async function ensureProfile(u){
+  const ref=doc(db,'users',u.uid),s=await getDoc(ref);
+  if(s.exists())return{uid:u.uid,...s.data()};
+  let yxaId;
+  for(let i=0;i<8&&!yxaId;i++){
+    const c='YXA-'+Math.floor(100000+Math.random()*900000);
+    if((await getDocs(query(collection(db,'users'),where('yxaId','==',c),limit(1)))).empty)yxaId=c;
+  }
+  if(!yxaId)throw new Error('تعذّر توليد رقم YXA، أعد المحاولة');
+  const d={name:u.displayName||(u.email||'مستخدم').split('@')[0],yxaId,created:serverTimestamp()};
+  await setDoc(ref,d);return{uid:u.uid,...d};
 }
 
-window.addFriend = async () => {
-  const email = $('friend-email').value.trim();
-  if (!email) { toast('أدخل بريد الصديق', 'error'); return; }
-  if (email === me.email) { toast('لا يمكن إضافة نفسك', 'error'); return; }
-  try {
-    const q = query(collection(db, 'users'), where('email', '==', email), limit(1));
-    const snap = await getDocs(q);
-    if (snap.empty) { toast('لا يوجد مستخدم بهذا البريد', 'error'); return; }
-    const otherId = snap.docs[0].id;
-    // ابحث عن محادثة موجودة
-    const qc = query(
-      collection(db, 'chats'),
-      where('members', 'array-contains', me.uid)
-    );
-    const csnap = await getDocs(qc);
-    for (const c of csnap.docs) {
-      if (c.data().members.includes(otherId)) {
-        toast('المحادثة موجودة بالفعل', 'info');
-        openChat(c.id, snap.docs[0].data().name);
-        return;
+if(isCloud){
+  onAuthStateChanged(auth,async u=>{
+    unsubs.forEach(f=>f());unsubs=[];closeAll();
+    if(!u){me=null;$('app').hidden=true;$('auth').hidden=false;return}
+    try{me=await ensureProfile(u)}catch(e){authErr(msg(e));await signOut(auth);return}
+    $('auth').hidden=true;$('app').hidden=false;
+    $('u-yxa').textContent=me.yxaId;$('u-name').textContent=me.name;
+    $('a-name').value=me.name;$('a-yxa').value=me.yxaId;$('a-mail').value=u.email||'(بدون بريد)';
+    listen();
+  });
+}else{
+  const existing=LS.get('user',null);
+  if(existing){enterLocalSession(existing.name,existing.email)}else{$('auth').hidden=false}
+}
+
+/* ===== البيانات المباشرة ===== */
+function renderStoriesList(items){
+  const c=$('stories');c.innerHTML='';
+  items.forEach(v=>{
+    const b=el('button','btn');b.style.cssText='flex-shrink:0;max-width:160px;text-align:right;flex-direction:column;align-items:flex-start';
+    b.append(el('div','sm mut',v.author),el('div','',v.text.slice(0,30)));
+    b.onclick=()=>{$('s-by').textContent=v.author;$('s-tx').textContent=v.text;openM('m-story')};
+    c.append(b);
+  });
+  if(!items.length)c.append(el('span','sm mut','لا توجد ستوريات'));
+}
+
+function renderFriendsList(items){
+  const l=$('f-list');l.innerHTML='';
+  items.forEach(f=>{
+    const r=el('div','item row sp'),i=el('div');
+    i.append(el('div','b900',f.name),el('div','sm mono mut',f.yxaId));
+    const b=el('button','btn bp','💬 محادثة');b.onclick=()=>openChat(f);r.append(i,b);l.append(r);
+  });
+  if(!items.length)l.append(el('p','sm mut','لم تضف أصدقاء بعد'));
+}
+
+function renderLocalAll(){
+  posts=LS.get('posts',[{id:'p1',uid:'sys',author:'إدارة YXA',text:'مرحباً بك في منصة تواصل | YXA!',likes:[],timeStr:'الآن'}]);
+  renderPosts();
+  renderStoriesList(LS.get('stories',[{author:'تواصل',text:'أهلاً بك في تواصل YXA ✨'}]));
+  renderFriendsList(LS.get('friends',[{id:'support',name:'الدعم الفني YXA',yxaId:'YXA-056306'}]));
+}
+
+function listen(){
+  const bad=e=>toast(msg(e));
+  unsubs.push(onSnapshot(query(collection(db,'posts'),orderBy('ts','desc'),limit(50)),s=>{posts=s.docs.map(d=>({id:d.id,...d.data()}));renderPosts()},bad));
+  unsubs.push(onSnapshot(query(collection(db,'stories'),orderBy('ts','desc'),limit(20)),s=>{
+    renderStoriesList(s.docs.map(d=>d.data()));
+  },bad));
+  unsubs.push(onSnapshot(collection(db,'users',me.uid,'friends'),s=>{
+    renderFriendsList(s.docs.map(d=>({id:d.id,...d.data()})));
+  },bad));
+}
+
+function renderPosts(){
+  const f=$('posts');f.innerHTML='';
+  posts.forEach(p=>{
+    const c=el('div','card stack'),h=el('div','row sp');
+    h.append(el('b','',p.author),el('span','sm mut',p.timeStr||fmt(p.ts)));
+    const t=el('p','',p.text);t.style.cssText='white-space:pre-wrap;word-break:break-word;line-height:1.8';
+    const likes=p.likes||[],mine=likes.includes(me.uid),a=el('div','row');
+    const lb=el('button','btn'+(mine?' bp':''),`❤️ ${likes.length}`);
+    lb.onclick=()=>{
+      if(!isCloud){
+        p.likes=mine?likes.filter(x=>x!==me.uid):[...likes,me.uid];
+        LS.set('posts',posts);renderPosts();return;
       }
+      updateDoc(doc(db,'posts',p.id),{likes:mine?arrayRemove(me.uid):arrayUnion(me.uid)}).catch(e=>toast(msg(e)));
+    };
+    a.append(lb);
+    if(p.uid===me.uid){
+      const d=el('button','btn','🗑️');
+      d.onclick=()=>{pendingDelId=p.id;openM('m-del')};
+      a.append(d);
     }
-    // أنشئ محادثة جديدة
-    await addDoc(collection(db, 'chats'), {
-      members: [me.uid, otherId],
-      createdAt: serverTimestamp(),
-      lastMessage: ''
-    });
-    $('friend-email').value = '';
-    toast('تمت إضافة الصديق');
-  } catch (err) {
-    console.error(err);
-    toast('فشل الإضافة', 'error');
-  }
-};
-
-window.openChat = (chatId, title) => {
-  currentChat = chatId;
-  $('chat-title').textContent = title;
-  $('chat-messages').innerHTML = '<p class="text-xs text-neutral-500">جاري التحميل...</p>';
-  $('chat-modal').classList.remove('hidden');
-
-  if (chatUnsub) { try { chatUnsub(); } catch(_){} }
-  const q = query(
-    collection(db, 'chats', chatId, 'messages'),
-    orderBy('createdAt', 'asc'),
-    limit(200)
-  );
-  chatUnsub = onSnapshot(q, (snap) => {
-    const box = $('chat-messages');
-    box.innerHTML = '';
-    if (snap.empty) {
-      box.innerHTML = '<p class="text-xs text-neutral-500 text-center">لا توجد رسائل بعد.</p>';
-      return;
-    }
-    snap.forEach(d => {
-      const m = d.data();
-      const div = document.createElement('div');
-      div.className = m.senderId === me.uid ? 'msg-me' : 'msg-other';
-      div.textContent = m.text;
-      box.appendChild(div);
-    });
-    box.scrollTop = box.scrollHeight;
-  }, (err) => {
-    console.error(err);
-    toast('تعذر تحميل الرسائل', 'error');
+    c.append(h,t,a);f.append(c);
   });
-};
-
-window.closeChat = () => {
-  $('chat-modal').classList.add('hidden');
-  if (chatUnsub) { try { chatUnsub(); } catch(_){} chatUnsub = null; }
-  currentChat = null;
-};
-
-window.sendChatMsg = async () => {
-  if (!currentChat) return;
-  const txt = $('chat-input').value.trim();
-  if (!txt) return;
-  if (txt.length > 2000) { toast('الرسالة طويلة جداً', 'error'); return; }
-  try {
-    await addDoc(collection(db, 'chats', currentChat, 'messages'), {
-      senderId: me.uid,
-      text: txt,
-      createdAt: serverTimestamp()
-    });
-    await updateDoc(doc(db, 'chats', currentChat), { lastMessage: txt });
-    $('chat-input').value = '';
-  } catch (err) {
-    toast('فشل الإرسال', 'error');
-  }
-};
-
-/* ============================================================
-   12) AI (Gemini)
-   ============================================================ */
-window.sendAi = async () => {
-  if (aiBusy) return;
-  const txt = $('ai-input').value.trim();
-  if (!txt) return;
-  const key = localStorage.getItem('yxa_gemini_key');
-  if (!key) { toast('أضف مفتاح Gemini أولاً في الإعدادات', 'error'); return; }
-
-  aiBusy = true;
-  busy($('btn-ai'), true);
-  const feed = $('ai-feed');
-  const q = document.createElement('div');
-  q.className = 'msg-me';
-  q.textContent = txt;
-  feed.appendChild(q);
-  $('ai-input').value = '';
-  feed.scrollTop = feed.scrollHeight;
-
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: txt }] }] })
-      }
-    );
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    const out = data?.candidates?.[0]?.content?.parts?.[0]?.text || '(رد فارغ)';
-    const a = document.createElement('div');
-    a.className = 'msg-other whitespace-pre-wrap';
-    a.textContent = out;
-    feed.appendChild(a);
-  } catch (err) {
-    const a = document.createElement('div');
-    a.className = 'msg-other';
-    a.textContent = 'تعذر الاتصال بـ Gemini. تحقق من المفتاح.';
-    feed.appendChild(a);
-  } finally {
-    aiBusy = false;
-    busy($('btn-ai'), false);
-    feed.scrollTop = feed.scrollHeight;
-  }
-};
-
-// اربط مفتاح Gemini من الحساب
-window.saveGeminiKey = () => {
-  const k = prompt('أدخل مفتاح Gemini API:');
-  if (k !== null) {
-    localStorage.setItem('yxa_gemini_key', k.trim());
-    toast('تم حفظ المفتاح');
-  }
-};
-
-/* ============================================================
-   13) Cloud Files
-   ============================================================ */
-function startFiles() {
-  const q = query(
-    collection(db, 'files'),
-    where('ownerId', '==', me.uid),
-    orderBy('createdAt', 'desc')
-  );
-  const unsub = onSnapshot(q, (snap) => {
-    const list = $('files-list');
-    list.innerHTML = '';
-    if (snap.empty) {
-      list.innerHTML = `<div class="text-xs text-neutral-500 text-center p-6 border border-neutral-300 dark:border-neutral-800 rounded-3xl">لا توجد ملفات.</div>`;
-      return;
-    }
-    snap.forEach(d => {
-      const f = d.data();
-      const row = document.createElement('div');
-      row.className = 'p-3 rounded-2xl bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 flex items-center justify-between gap-2';
-      row.innerHTML = `
-        <div class="min-w-0">
-          <p class="text-xs font-black truncate">${esc(f.name)}</p>
-          <p class="text-[10px] text-neutral-500">${(f.size/1024).toFixed(1)} KB</p>
-        </div>
-        <div class="flex gap-1 shrink-0">
-          <a href="${esc(f.url)}" target="_blank" rel="noopener" class="btn-act p-2 rounded-xl bg-neutral-200 dark:bg-neutral-800 text-xs"><i class="fa-solid fa-download"></i></a>
-          <button data-del="${d.id}" data-path="${esc(f.path)}" class="btn-act p-2 rounded-xl text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button>
-        </div>`;
-      row.querySelector(`[data-del="${d.id}"]`).onclick = () => delFile(d.id, f.path);
-      list.appendChild(row);
-    });
-  });
-  unsubs.push(unsub);
 }
 
-window.uploadFiles = async (e) => {
-  const files = Array.from(e.target.files || []);
-  if (!files.length) return;
-  for (const f of files) {
-    if (f.size > 50*1024*1024) { toast(`${f.name}: أكبر من 50MB`, 'error'); continue; }
-    try {
-      const path = `cloud/${me.uid}/${Date.now()}_${f.name}`;
-      const ref = sRef(storage, path);
-      await uploadBytes(ref, f);
-      const url = await getDownloadURL(ref);
-      await addDoc(collection(db, 'files'), {
-        ownerId: me.uid,
-        name: f.name,
-        size: f.size,
-        path, url,
-        createdAt: serverTimestamp()
-      });
-      toast(`تم رفع ${f.name}`);
-    } catch (err) {
-      toast(`فشل رفع ${f.name}`, 'error');
-    }
+$('del-yes').onclick=async()=>{
+  if(!pendingDelId)return;
+  const id=pendingDelId;pendingDelId=null;closeAll();
+  if(!isCloud){
+    posts=posts.filter(x=>x.id!==id);LS.set('posts',posts);renderPosts();toast('تم الحذف');return;
   }
-  e.target.value = '';
+  try{await deleteDoc(doc(db,'posts',id));toast('تم الحذف')}catch(e){toast(msg(e))}
 };
 
-async function delFile(id, path) {
-  if (!confirm('حذف الملف؟')) return;
-  try {
-    await deleteDoc(doc(db, 'files', id));
-    try { await deleteObject(sRef(storage, path)); } catch (_) {}
-    toast('تم الحذف', 'info');
-  } catch (err) { toast('فشل الحذف', 'error'); }
+$('post-add').onclick=async()=>{
+  const t=$('post-in').value.trim();if(!t)return;
+  if(!isCloud){
+    posts.unshift({id:'p_'+Date.now(),uid:me.uid,author:me.name,text:t,likes:[],timeStr:fmt(null)});
+    LS.set('posts',posts);$('post-in').value='';renderPosts();toast('تم النشر');return;
+  }
+  try{await addDoc(collection(db,'posts'),{uid:me.uid,author:me.name,text:t,likes:[],ts:serverTimestamp()});$('post-in').value=''}catch(e){toast(msg(e))}
+};
+
+$('st-add').onclick=()=>{$('st-in').value='';openM('m-add-story');$('st-in').focus()};
+$('st-save').onclick=async()=>{
+  const t=$('st-in').value.trim().slice(0,300);if(!t)return toast('اكتب نص الستوري');
+  closeAll();
+  if(!isCloud){
+    const st=LS.get('stories',[]);st.unshift({uid:me.uid,author:me.name,text:t});
+    LS.set('stories',st);renderStoriesList(st);toast('تم نشر الستوري');return;
+  }
+  try{await addDoc(collection(db,'stories'),{uid:me.uid,author:me.name,text:t,ts:serverTimestamp()});toast('تم نشر الستوري')}catch(e){toast(msg(e))}
+};
+
+/* ===== الأصدقاء والدردشة ===== */
+$('f-add').onclick=async()=>{
+  const v=$('f-in').value.trim().toUpperCase();if(!/^YXA-\d{6}$/.test(v))return toast('الصيغة: YXA-123456');
+  if(v===me.yxaId)return toast('هذا رقمك أنت');
+  if(!isCloud){
+    const fl=LS.get('friends',[]);
+    if(fl.some(x=>x.yxaId===v))return toast('مضاف مسبقاً');
+    fl.push({id:'f_'+v,name:'عضو '+v,yxaId:v});
+    LS.set('friends',fl);renderFriendsList(fl);$('f-in').value='';toast('تمت الإضافة');return;
+  }
+  try{
+    const s=await getDocs(query(collection(db,'users'),where('yxaId','==',v),limit(1)));
+    if(s.empty)return toast('لا يوجد مستخدم بهذا الرقم');
+    const u=s.docs[0];await setDoc(doc(db,'users',me.uid,'friends',u.id),{name:u.data().name,yxaId:v});
+    $('f-in').value='';toast('تمت الإضافة');
+  }catch(e){toast(msg(e))}
+};
+function stopChat(){if(chatUnsub){chatUnsub();chatUnsub=null}chatFriend=null}
+function openChat(f){
+  stopChat();chatFriend=f;$('c-name').textContent=f.name;$('c-id').textContent=f.yxaId;
+  const id=[me.uid,f.id].sort().join('_');
+  if(!isCloud){
+    const c=$('c-feed');c.innerHTML='';
+    const msgs=LS.get('chat_'+id,[{from:'ot',text:'أهلاً بك! كيف أساعدك؟'}]);
+    msgs.forEach(m=>c.append(el('div','b '+(m.from===me.uid?'me':'ot'),m.text)));
+    c.scrollTop=c.scrollHeight;
+    openM('m-chat');$('c-in').focus();return;
+  }
+  chatUnsub=onSnapshot(query(collection(db,'chats',id,'messages'),orderBy('ts')),s=>{
+    const c=$('c-feed');c.innerHTML='';
+    s.docs.forEach(d=>{const m=d.data(),b=el('div','b '+(m.from===me.uid?'me':'ot'),m.text);b.title=fmt(m.ts);c.append(b)});
+    c.scrollTop=c.scrollHeight;
+  },e=>toast(msg(e)));
+  openM('m-chat');$('c-in').focus();
 }
-
-/* ============================================================
-   14) Account
-   ============================================================ */
-window.saveProfile = async () => {
-  const name  = $('acc-name').value.trim();
-  const phone = $('acc-phone').value.trim();
-  if (name.length < 2) { toast('الاسم قصير', 'error'); return; }
-  if (phone && !/^0?5\d{8}$/.test(phone)) { toast('رقم جوال غير صالح', 'error'); return; }
-  try {
-    await updateDoc(doc(db, 'users', me.uid), { name, phone });
-    await updateProfile(auth.currentUser, { displayName: name });
-    me.name = name; me.phone = phone;
-    $('badge-name').textContent = name;
-    toast('تم الحفظ');
-  } catch (err) {
-    toast('فشل الحفظ', 'error');
+async function sendMsg(){
+  const i=$('c-in'),t=i.value.trim();if(!t||!chatFriend)return;
+  const id=[me.uid,chatFriend.id].sort().join('_');i.value='';
+  if(!isCloud){
+    const msgs=LS.get('chat_'+id,[{from:'ot',text:'أهلاً بك! كيف أساعدك؟'}]);
+    msgs.push({from:me.uid,text:t});LS.set('chat_'+id,msgs);
+    const c=$('c-feed');c.append(el('div','b me',t));c.scrollTop=c.scrollHeight;return;
   }
+  try{await addDoc(collection(db,'chats',id,'messages'),{from:me.uid,text:t,ts:serverTimestamp()})}catch(e){toast(msg(e));i.value=t}
+}
+$('c-send').onclick=sendMsg;$('c-in').onkeydown=e=>{if(e.key==='Enter')sendMsg()};
+
+/* ===== الذكاء الاصطناعي ===== */
+$('g-save').onclick=()=>{geminiKey=$('g-key').value.trim();try{localStorage.setItem('yxa_gkey',geminiKey)}catch{}toast(geminiKey?'تم حفظ المفتاح':'تم مسح المفتاح')};
+async function callAi(p){
+  if(!geminiKey)throw new Error('أضف مفتاح Gemini API من تبويب الذكاء');
+  let r;try{r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':geminiKey},body:JSON.stringify({contents:[{parts:[{text:p}]}]})})}
+  catch{throw new Error('تعذّر الاتصال بالإنترنت')}
+  if(!r.ok)throw new Error('فشل طلب الذكاء الاصطناعي ('+r.status+') — تحقق من المفتاح');
+  const t=(await r.json()).candidates?.[0]?.content?.parts?.[0]?.text;if(!t)throw new Error('لم يصل رد');return t;
+}
+async function askAi(){
+  const i=$('ai-in'),t=i.value.trim();if(!t)return;const f=$('ai-feed');
+  f.append(el('div','b me',t));i.value='';const w=el('div','b ot','...');f.append(w);
+  try{w.textContent=await callAi(t)}catch(e){w.textContent='⚠️ '+e.message}f.scrollTop=f.scrollHeight;
+}
+$('ai-send').onclick=askAi;$('ai-in').onkeydown=e=>{if(e.key==='Enter')askAi()};
+$('post-ai').onclick=async()=>{
+  const i=$('post-in');if(!i.value.trim())return toast('اكتب نصاً أولاً');
+  try{toast('جاري الصياغة...');i.value=(await callAi('أعد صياغة هذا المنشور بأسلوب جذاب وأعد النص فقط: '+i.value)).trim()}catch(e){toast(e.message)}
 };
 
-/* ============================================================
-   15) Escape
-   ============================================================ */
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeChat();
-});
+/* ===== الحساب ===== */
+$('a-save').onclick=async()=>{
+  const n=$('a-name').value.trim();if(!n)return toast('الاسم مطلوب');
+  if(!isCloud){me.name=n;LS.set('user',me);$('u-name').textContent=n;toast('تم الحفظ');return}
+  try{await updateDoc(doc(db,'users',me.uid),{name:n});me.name=n;$('u-name').textContent=n;toast('تم الحفظ')}catch(e){toast(msg(e))}
+};
+$('a-copy').onclick=()=>safeCopy(me.yxaId);
 </script>
 </body>
 </html>
