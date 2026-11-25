@@ -1,476 +1,1010 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>تواصل | YXA</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;font-family:'Cairo',system-ui,sans-serif;margin:0}
-:root{--bg:#f5f5f5;--fg:#0a0a0a;--card:#fff;--bd:#d4d4d4;--sub:#ececec;--mut:#737373;--inv:#000;--invfg:#fff}
-.dark{--bg:#000;--fg:#fafafa;--card:#0a0a0a;--bd:#262626;--sub:#171717;--mut:#a3a3a3;--inv:#fff;--invfg:#000}
-[hidden]{display:none!important}
-body{background:var(--bg);color:var(--fg);min-height:100vh;font-size:14px}
-.screen,.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:1rem;overflow:auto}
-.screen{background:var(--bg);z-index:40}.modal{background:rgba(0,0,0,.85);z-index:50}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:1.5rem;padding:1.25rem;width:100%}
-.stack>*+*{margin-top:.8rem}.row{display:flex;align-items:center;gap:.5rem}.sp{justify-content:space-between}
-.inp{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:1rem;padding:.7rem 1rem;font-size:.8rem;outline:none}
-.inp:focus{border-color:var(--fg)}.inp[readonly]{background:var(--sub);font-weight:700}
-.btn{border:1px solid var(--bd);background:var(--sub);color:var(--fg);border-radius:1rem;padding:.65rem 1rem;font-size:.8rem;font-weight:700;cursor:pointer;transition:transform .14s;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
-.btn:active{transform:scale(.95)}.btn:disabled{opacity:.5}
-.bp{background:var(--inv);color:var(--invfg);border-color:var(--inv);font-weight:900}
-.mut{color:var(--mut)}.sm{font-size:.7rem}.mono{font-family:monospace}.b900{font-weight:900}
-.wrap{max-width:720px;margin:0 auto;padding:1rem}
-.tabs{display:flex;gap:.4rem;overflow-x:auto;padding:.5rem 0}.tabs .btn{white-space:nowrap}
-.tab{display:none}.tab.on{display:block}.tab>*+*{margin-top:1rem}
-.feed{display:flex;flex-direction:column;gap:.5rem;overflow-y:auto}
-.b{padding:.7rem;border-radius:1rem;font-size:.8rem;max-width:85%;white-space:pre-wrap;word-break:break-word;line-height:1.7}
-.b.me{background:var(--inv);color:var(--invfg);align-self:flex-start}.b.ot{background:var(--sub);align-self:flex-end}
-.item{background:var(--bg);border:1px solid var(--bd);border-radius:1rem;padding:.75rem}
-.err{color:#e11d48;font-size:.75rem;font-weight:700;min-height:1rem}
-#toasts{position:fixed;top:1rem;left:1rem;z-index:99;display:flex;flex-direction:column;gap:.5rem}
-.toast{background:var(--inv);color:var(--invfg);padding:.7rem 1rem;border-radius:1rem;font-weight:900;font-size:.8rem}
-.logo{width:3.2rem;height:3.2rem;border-radius:1rem;display:flex;align-items:center;justify-content:center;font-weight:900;background:var(--inv);color:var(--invfg)}
-pre{background:var(--sub);padding:.7rem;border-radius:.8rem;overflow:auto;direction:ltr;text-align:left;font-size:.7rem}
-</style>
-</head>
-<body>
-<div id="toasts"></div>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <title>تواصل | YXA</title>
 
-<!-- إعداد Firebase -->
-<div id="setup" class="modal" hidden><div class="card stack" style="max-width:520px">
- <div class="row sp"><h2 class="b900">⚙️ إعدادات Firebase السحابية</h2><button class="btn" data-close>✕</button></div>
- <p class="sm mut" style="line-height:1.9">الصق كائن <b>firebaseConfig</b> بصيغة JSON هنا للربط السحابي الحقيقي، أو أغلق النافذة للمتابعة في الوضع المحلي المباشر:</p>
- <textarea id="fb-json" class="inp mono" rows="6" style="direction:ltr;text-align:left" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea>
- <div class="row"><button id="fb-save" class="btn bp" style="flex:1">حفظ وتفعيل Firebase</button><button id="fb-clear" class="btn">مسح الإعدادات</button></div>
-</div></div>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
 
-<!-- تسجيل الدخول -->
-<div id="auth" class="screen" hidden><div class="card stack" style="max-width:420px">
- <div style="text-align:center" class="stack"><div class="logo" style="margin:0 auto">YXA</div><h2 class="b900">تواصل | YXA</h2><p id="mode-badge" class="sm mut">سجّل الدخول للمتابعة</p></div>
- <p id="file-warn" class="err" hidden>⚠️ الصفحة مفتوحة كملف مباشر. تسجيل الدخول الاجتماعي يحتاج رابط http(s) أو localhost (مثل GitHub Pages أو Firebase Hosting).</p>
- <button class="btn bp" style="width:100%" data-p="google">الدخول بحساب Google</button>
- <button class="btn" style="width:100%" data-p="apple">الدخول بحساب Apple</button>
- <button class="btn" style="width:100%" data-p="github">الدخول بحساب GitHub</button>
- <p class="sm mut" style="text-align:center">أو بالبريد الإلكتروني</p>
- <input id="em" type="email" class="inp" placeholder="البريد الإلكتروني" autocomplete="email">
- <input id="pw" type="password" class="inp" placeholder="كلمة المرور (6 أحرف على الأقل)" autocomplete="current-password">
- <div class="row"><button id="em-in" class="btn bp" style="flex:1">دخول</button><button id="em-up" class="btn" style="flex:1">إنشاء حساب</button></div>
- <button id="open-setup" class="btn sm" style="width:100%">⚙️ ربط مشروع Firebase الحقيقي</button>
- <p id="auth-err" class="err"></p>
-</div></div>
-
-<!-- التطبيق -->
-<div id="app" hidden><div class="wrap">
- <header class="row sp card" style="padding:.8rem 1rem">
-  <div class="row"><div class="logo" style="width:2.4rem;height:2.4rem;font-size:.75rem">YXA</div>
-   <div><div class="b900">تواصل <span id="u-yxa" class="mono sm mut"></span></div><div id="u-name" class="sm mut"></div></div></div>
-  <div class="row"><button class="btn" id="b-theme" title="المظهر">🌓</button><button class="btn" id="b-out" title="خروج">🚪</button></div>
- </header>
- <nav id="tabs" class="tabs"></nav>
-
- <section id="t-home" class="tab on">
-  <div class="card stack"><div class="row sp"><b>الستوريات</b><button class="btn bp" id="st-add">+ ستوري</button></div><div id="stories" class="row" style="overflow-x:auto"></div></div>
-  <div class="card stack"><textarea id="post-in" class="inp" rows="2" maxlength="1000" placeholder="ماذا يدور في ذهنك؟" style="resize:none"></textarea>
-   <div class="row" style="justify-content:flex-end"><button class="btn" id="post-ai">✨ صياغة بالذكاء</button><button class="btn bp" id="post-add">نشر</button></div></div>
-  <div id="posts" class="stack"></div>
- </section>
-
- <section id="t-friends" class="tab">
-  <div class="card stack"><b>إضافة صديق برقم YXA</b>
-   <div class="row"><input id="f-in" class="inp mono" placeholder="YXA-123456" style="direction:ltr"><button class="btn bp" id="f-add">إضافة</button></div></div>
-  <div class="card stack"><b>الأصدقاء</b><div id="f-list" class="stack"></div></div>
- </section>
-
- <section id="t-ai" class="tab">
-  <div class="card stack"><b>🧠 الذكاء الاصطناعي (Gemini)</b>
-   <p class="sm mut">المفتاح يُحفظ في هذا المتصفح فقط ويُرسل لـ Google مباشرة.</p>
-   <div class="row"><input id="g-key" type="password" class="inp mono" placeholder="مفتاح Gemini API" autocomplete="off"><button class="btn bp" id="g-save">حفظ</button></div></div>
-  <div class="card stack"><div id="ai-feed" class="feed" style="min-height:220px;max-height:380px"></div>
-   <div class="row"><input id="ai-in" class="inp" placeholder="اكتب سؤالك..."><button class="btn bp" id="ai-send">إرسال</button></div></div>
- </section>
-
- <section id="t-me" class="tab">
-  <div class="card stack"><b>الملف الشخصي</b>
-   <div><div class="sm mut">الاسم</div><input id="a-name" class="inp" maxlength="60"></div>
-   <div><div class="sm mut">رقم YXA</div><input id="a-yxa" class="inp mono" readonly></div>
-   <div><div class="sm mut">البريد</div><input id="a-mail" class="inp" readonly></div>
-   <div class="row"><button class="btn bp" id="a-save">حفظ</button><button class="btn" id="a-copy">نسخ رقم YXA</button><button class="btn" id="b-contact">📞 التواصل</button></div></div>
- </section>
-</div></div>
-
-<!-- نافذة عرض الستوري -->
-<div id="m-story" class="modal" hidden><div class="card stack" style="max-width:380px"><div class="row sp"><b id="s-by"></b><button class="btn" data-close>✕</button></div>
- <p id="s-tx" style="padding:2rem 0;text-align:center;font-weight:700;white-space:pre-wrap;word-break:break-word"></p></div></div>
-
-<!-- نافذة إضافة ستوري -->
-<div id="m-add-story" class="modal" hidden><div class="card stack" style="max-width:400px">
- <div class="row sp"><b>+ إضافة ستوري جديد</b><button class="btn" data-close>✕</button></div>
- <textarea id="st-in" class="inp" rows="3" maxlength="300" placeholder="اكتب نص الستوري هنا..."></textarea>
- <button id="st-save" class="btn bp" style="width:100%">نشر الستوري</button>
-</div></div>
-
-<!-- نافذة تأكيد الحذف -->
-<div id="m-del" class="modal" hidden><div class="card stack" style="max-width:340px;text-align:center">
- <b>هل تريد حذف هذا المنشور؟</b>
- <div class="row"><button id="del-yes" class="btn bp" style="flex:1">نعم، احذف</button><button class="btn" data-close style="flex:1">إلغاء</button></div>
-</div></div>
-
-<!-- نافذة التواصل المباشر -->
-<div id="m-contact" class="modal" hidden><div class="card stack" style="max-width:400px">
- <div class="row sp"><b>📞 التواصل المباشر</b><button class="btn" data-close>✕</button></div>
- <div class="item row sp"><div><div class="sm mut">واتساب مباشر</div><div class="b900 mono" dir="ltr">0563068840</div></div><a href="https://wa.me/966563068840" target="_blank" class="btn bp">مراسلة</a></div>
- <div class="item row sp"><div><div class="sm mut">البريد الإلكتروني</div><div class="b900 mono" style="font-size:.75rem">ya8827860@gmail.com</div></div><button id="copy-mail" class="btn">نسخ</button></div>
-</div></div>
-
-<!-- نافذة المحادثة -->
-<div id="m-chat" class="modal" hidden><div class="card stack" style="max-width:520px">
- <div class="row sp"><div><b id="c-name"></b><div id="c-id" class="sm mono mut"></div></div><button class="btn" data-close>✕</button></div>
- <div id="c-feed" class="feed" style="height:16rem"></div>
- <div class="row"><input id="c-in" class="inp" maxlength="1000" placeholder="اكتب رسالتك..."><button class="btn bp" id="c-send">إرسال</button></div></div></div>
-
-<script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getAuth,onAuthStateChanged,signInWithPopup,GoogleAuthProvider,OAuthProvider,GithubAuthProvider,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,addDoc,query,where,orderBy,limit,onSnapshot,getDocs,arrayUnion,arrayRemove,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
-/* ===== ضع إعدادات مشروعك هنا ===== */
-const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  appId: "PASTE_APP_ID"
-};
-/* ================================== */
-
-const $=id=>document.getElementById(id);
-const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
-const toast=m=>{const t=el('div','toast',m);$('toasts').append(t);setTimeout(()=>t.remove(),3000)};
-const fmt=ts=>ts?.toDate?ts.toDate().toLocaleString('ar-SA',{dateStyle:'medium',timeStyle:'short'}):'الآن';
-const safeCopy=txt=>{
-  const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
-  document.body.appendChild(ta);ta.select();
-  try{document.execCommand('copy');toast('تم النسخ: '+txt)}catch{toast(txt)}
-  document.body.removeChild(ta);
-};
-const ERR={
- 'auth/unauthorized-domain':'هذا النطاق غير مضاف: Firebase ← Authentication ← Settings ← Authorized domains',
- 'auth/operation-not-supported-in-this-environment':'شغّل الصفحة من رابط http(s) أو localhost وليس كملف مباشر',
- 'auth/popup-closed-by-user':'أُغلقت نافذة الدخول','auth/cancelled-popup-request':'أُغلقت نافذة الدخول',
- 'auth/popup-blocked':'المتصفح حظر النافذة المنبثقة، اسمح بها ثم أعد المحاولة',
- 'auth/operation-not-allowed':'طريقة الدخول هذه غير مفعّلة في Firebase',
- 'auth/account-exists-with-different-credential':'هذا البريد مسجّل بطريقة دخول أخرى، استخدمها',
- 'auth/invalid-credential':'بيانات الدخول غير صحيحة','auth/email-already-in-use':'البريد مستخدم مسبقاً',
- 'auth/weak-password':'كلمة المرور ضعيفة (6 أحرف على الأقل)','auth/invalid-email':'البريد غير صالح',
- 'auth/network-request-failed':'تعذّر الاتصال بالإنترنت','permission-denied':'لا توجد صلاحية — راجع قواعد Firestore'};
-const msg=e=>ERR[e.code]||e.message||String(e);
-
-/* المظهر */
-const setTheme=t=>{document.documentElement.classList.toggle('dark',t==='dark');try{localStorage.setItem('yxa_theme',t)}catch{}};
-setTheme((()=>{try{return localStorage.getItem('yxa_theme')}catch{}})()||'dark');
-$('b-theme').onclick=()=>setTheme(document.documentElement.classList.contains('dark')?'light':'dark');
-
-/* النوافذ */
-const openM=id=>$(id).hidden=false;
-const closeAll=()=>{document.querySelectorAll('.modal').forEach(m=>m.hidden=true);stopChat()};
-document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
-$('b-contact').onclick=()=>openM('m-contact');
-$('copy-mail').onclick=()=>safeCopy('ya8827860@gmail.com');
-
-/* التبويبات */
-[['home','🏠 الرئيسية'],['friends','👥 الأصدقاء'],['ai','🧠 الذكاء'],['me','👤 حسابي']].forEach(([id,l])=>{
-  const b=el('button','btn'+(id==='home'?' bp':''),l);b.dataset.t=id;
-  b.onclick=()=>{document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('on',s.id==='t-'+id));document.querySelectorAll('#tabs .btn').forEach(x=>x.classList.toggle('bp',x===b))};
-  $('tabs').append(b);
-});
-
-/* ===== تهيئة Firebase أو الوضع المحلي الذكي ===== */
-let savedCfg=null;
-try{savedCfg=JSON.parse(localStorage.getItem('yxa_fb_cfg')||'null')}catch{}
-const activeCfg=(savedCfg&&savedCfg.apiKey)?savedCfg:((firebaseConfig.apiKey&&!firebaseConfig.apiKey.startsWith('PASTE'))?firebaseConfig:null);
-const isCloud=Boolean(activeCfg);
-
-let app=null,auth=null,db=null;
-if(isCloud){
-  app=initializeApp(activeCfg);auth=getAuth(app);db=getFirestore(app);
-  $('mode-badge').textContent='متصل بالسحابة الحقيقية (Firebase)';
-}else{
-  $('mode-badge').textContent='الوضع المحلي المباشر (يعمل فوراً بدون أخطاء)';
-}
-
-$('open-setup').onclick=()=>{
-  $('fb-json').value=savedCfg?JSON.stringify(savedCfg,null,2):'';
-  openM('setup');
-};
-$('fb-save').onclick=()=>{
-  try{
-    const parsed=JSON.parse($('fb-json').value.trim());
-    if(!parsed.apiKey||!parsed.projectId)throw new Error('يجب وجود apiKey و projectId');
-    localStorage.setItem('yxa_fb_cfg',JSON.stringify(parsed));
-    toast('تم الحفظ! جاري إعادة التحميل...');
-    setTimeout(()=>location.reload(),600);
-  }catch(e){toast('صيغة JSON غير صحيحة: '+e.message)}
-};
-$('fb-clear').onclick=()=>{
-  try{localStorage.removeItem('yxa_fb_cfg')}catch{}
-  toast('تم المسح! جاري العودة للوضع المحلي...');
-  setTimeout(()=>location.reload(),600);
-};
-
-let me=null,unsubs=[],chatUnsub=null,chatFriend=null,posts=[],geminiKey='',pendingDelId=null;
-try{geminiKey=localStorage.getItem('yxa_gkey')||''}catch{}
-$('g-key').value=geminiKey;
-if(location.protocol==='file:')$('file-warn').hidden=false;
-
-/* مخزن محلي بديل عند عدم ربط Firebase */
-const LS={
-  get:(k,d)=>{try{return JSON.parse(localStorage.getItem('yxa_db_'+k))??d}catch{return d}},
-  set:(k,v)=>{try{localStorage.setItem('yxa_db_'+k,JSON.stringify(v))}catch{}}
-};
-
-/* ===== الدخول ===== */
-const authErr=m=>$('auth-err').textContent=m||'';
-const prov={google:()=>new GoogleAuthProvider(),github:()=>new GithubAuthProvider(),
-  apple:()=>{const p=new OAuthProvider('apple.com');p.addScope('email');p.addScope('name');return p}};
-
-function enterLocalSession(name,email){
-  const savedUser=LS.get('user',null);
-  const yxaId=savedUser?.yxaId||('YXA-'+Math.floor(100000+Math.random()*900000));
-  me={uid:'local_'+yxaId,name:name||savedUser?.name||'مستخدم YXA',yxaId,email:email||savedUser?.email||'user@yxa.local'};
-  LS.set('user',me);
-  $('auth').hidden=true;$('app').hidden=false;
-  $('u-yxa').textContent=me.yxaId;$('u-name').textContent=me.name;
-  $('a-name').value=me.name;$('a-yxa').value=me.yxaId;$('a-mail').value=me.email;
-  renderLocalAll();
-}
-
-document.querySelectorAll('[data-p]').forEach(b=>b.onclick=async()=>{
-  authErr();
-  if(!isCloud){
-    const label={google:'مستخدم Google',apple:'مستخدم Apple',github:'مستخدم GitHub'}[b.dataset.p];
-    enterLocalSession(label,b.dataset.p+'@yxa.local');
-    toast('تم الدخول ('+label+')');
-    return;
-  }
-  try{await signInWithPopup(auth,prov[b.dataset.p]())}catch(e){authErr(msg(e))}
-});
-
-async function emailAuth(create){
-  authErr();const e=$('em').value.trim(),p=$('pw').value;
-  if(!e||!p)return authErr('أدخل البريد وكلمة المرور');
-  if(p.length<6)return authErr('كلمة المرور 6 أحرف على الأقل');
-  if(!isCloud){
-    enterLocalSession(e.split('@')[0],e);
-    toast(create?'تم إنشاء الحساب بنجاح':'تم تسجيل الدخول');
-    return;
-  }
-  try{create?await createUserWithEmailAndPassword(auth,e,p):await signInWithEmailAndPassword(auth,e,p)}catch(x){authErr(msg(x))}
-}
-$('em-in').onclick=()=>emailAuth(false);$('em-up').onclick=()=>emailAuth(true);
-$('pw').onkeydown=e=>{if(e.key==='Enter')emailAuth(false)};
-$('b-out').onclick=()=>{
-  if(!isCloud){me=null;closeAll();$('app').hidden=true;$('auth').hidden=false;return}
-  signOut(auth);
-};
-
-async function ensureProfile(u){
-  const ref=doc(db,'users',u.uid),s=await getDoc(ref);
-  if(s.exists())return{uid:u.uid,...s.data()};
-  let yxaId;
-  for(let i=0;i<8&&!yxaId;i++){
-    const c='YXA-'+Math.floor(100000+Math.random()*900000);
-    if((await getDocs(query(collection(db,'users'),where('yxaId','==',c),limit(1)))).empty)yxaId=c;
-  }
-  if(!yxaId)throw new Error('تعذّر توليد رقم YXA، أعد المحاولة');
-  const d={name:u.displayName||(u.email||'مستخدم').split('@')[0],yxaId,created:serverTimestamp()};
-  await setDoc(ref,d);return{uid:u.uid,...d};
-}
-
-if(isCloud){
-  onAuthStateChanged(auth,async u=>{
-    unsubs.forEach(f=>f());unsubs=[];closeAll();
-    if(!u){me=null;$('app').hidden=true;$('auth').hidden=false;return}
-    try{me=await ensureProfile(u)}catch(e){authErr(msg(e));await signOut(auth);return}
-    $('auth').hidden=true;$('app').hidden=false;
-    $('u-yxa').textContent=me.yxaId;$('u-name').textContent=me.name;
-    $('a-name').value=me.name;$('a-yxa').value=me.yxaId;$('a-mail').value=u.email||'(بدون بريد)';
-    listen();
-  });
-}else{
-  const existing=LS.get('user',null);
-  if(existing){enterLocalSession(existing.name,existing.email)}else{$('auth').hidden=false}
-}
-
-/* ===== البيانات المباشرة ===== */
-function renderStoriesList(items){
-  const c=$('stories');c.innerHTML='';
-  items.forEach(v=>{
-    const b=el('button','btn');b.style.cssText='flex-shrink:0;max-width:160px;text-align:right;flex-direction:column;align-items:flex-start';
-    b.append(el('div','sm mut',v.author),el('div','',v.text.slice(0,30)));
-    b.onclick=()=>{$('s-by').textContent=v.author;$('s-tx').textContent=v.text;openM('m-story')};
-    c.append(b);
-  });
-  if(!items.length)c.append(el('span','sm mut','لا توجد ستوريات'));
-}
-
-function renderFriendsList(items){
-  const l=$('f-list');l.innerHTML='';
-  items.forEach(f=>{
-    const r=el('div','item row sp'),i=el('div');
-    i.append(el('div','b900',f.name),el('div','sm mono mut',f.yxaId));
-    const b=el('button','btn bp','💬 محادثة');b.onclick=()=>openChat(f);r.append(i,b);l.append(r);
-  });
-  if(!items.length)l.append(el('p','sm mut','لم تضف أصدقاء بعد'));
-}
-
-function renderLocalAll(){
-  posts=LS.get('posts',[{id:'p1',uid:'sys',author:'إدارة YXA',text:'مرحباً بك في منصة تواصل | YXA!',likes:[],timeStr:'الآن'}]);
-  renderPosts();
-  renderStoriesList(LS.get('stories',[{author:'تواصل',text:'أهلاً بك في تواصل YXA ✨'}]));
-  renderFriendsList(LS.get('friends',[{id:'support',name:'الدعم الفني YXA',yxaId:'YXA-056306'}]));
-}
-
-function listen(){
-  const bad=e=>toast(msg(e));
-  unsubs.push(onSnapshot(query(collection(db,'posts'),orderBy('ts','desc'),limit(50)),s=>{posts=s.docs.map(d=>({id:d.id,...d.data()}));renderPosts()},bad));
-  unsubs.push(onSnapshot(query(collection(db,'stories'),orderBy('ts','desc'),limit(20)),s=>{
-    renderStoriesList(s.docs.map(d=>d.data()));
-  },bad));
-  unsubs.push(onSnapshot(collection(db,'users',me.uid,'friends'),s=>{
-    renderFriendsList(s.docs.map(d=>({id:d.id,...d.data()})));
-  },bad));
-}
-
-function renderPosts(){
-  const f=$('posts');f.innerHTML='';
-  posts.forEach(p=>{
-    const c=el('div','card stack'),h=el('div','row sp');
-    h.append(el('b','',p.author),el('span','sm mut',p.timeStr||fmt(p.ts)));
-    const t=el('p','',p.text);t.style.cssText='white-space:pre-wrap;word-break:break-word;line-height:1.8';
-    const likes=p.likes||[],mine=likes.includes(me.uid),a=el('div','row');
-    const lb=el('button','btn'+(mine?' bp':''),`❤️ ${likes.length}`);
-    lb.onclick=()=>{
-      if(!isCloud){
-        p.likes=mine?likes.filter(x=>x!==me.uid):[...likes,me.uid];
-        LS.set('posts',posts);renderPosts();return;
-      }
-      updateDoc(doc(db,'posts',p.id),{likes:mine?arrayRemove(me.uid):arrayUnion(me.uid)}).catch(e=>toast(msg(e)));
-    };
-    a.append(lb);
-    if(p.uid===me.uid){
-      const d=el('button','btn','🗑️');
-      d.onclick=()=>{pendingDelId=p.id;openM('m-del')};
-      a.append(d);
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Cairo", system-ui, sans-serif;
     }
-    c.append(h,t,a);f.append(c);
-  });
-}
 
-$('del-yes').onclick=async()=>{
-  if(!pendingDelId)return;
-  const id=pendingDelId;pendingDelId=null;closeAll();
-  if(!isCloud){
-    posts=posts.filter(x=>x.id!==id);LS.set('posts',posts);renderPosts();toast('تم الحذف');return;
-  }
-  try{await deleteDoc(doc(db,'posts',id));toast('تم الحذف')}catch(e){toast(msg(e))}
-};
+    :root {
+      color-scheme: light;
+      --bg: #f5f5f5;
+      --fg: #0a0a0a;
+      --card: #fff;
+      --border: #d4d4d4;
+      --subtle: #ececec;
+      --muted: #737373;
+      --inverse: #000;
+      --inverse-fg: #fff;
+    }
 
-$('post-add').onclick=async()=>{
-  const t=$('post-in').value.trim();if(!t)return;
-  if(!isCloud){
-    posts.unshift({id:'p_'+Date.now(),uid:me.uid,author:me.name,text:t,likes:[],timeStr:fmt(null)});
-    LS.set('posts',posts);$('post-in').value='';renderPosts();toast('تم النشر');return;
-  }
-  try{await addDoc(collection(db,'posts'),{uid:me.uid,author:me.name,text:t,likes:[],ts:serverTimestamp()});$('post-in').value=''}catch(e){toast(msg(e))}
-};
+    .dark {
+      color-scheme: dark;
+      --bg: #000;
+      --fg: #fafafa;
+      --card: #0a0a0a;
+      --border: #262626;
+      --subtle: #171717;
+      --muted: #a3a3a3;
+      --inverse: #fff;
+      --inverse-fg: #000;
+    }
 
-$('st-add').onclick=()=>{$('st-in').value='';openM('m-add-story');$('st-in').focus()};
-$('st-save').onclick=async()=>{
-  const t=$('st-in').value.trim().slice(0,300);if(!t)return toast('اكتب نص الستوري');
-  closeAll();
-  if(!isCloud){
-    const st=LS.get('stories',[]);st.unshift({uid:me.uid,author:me.name,text:t});
-    LS.set('stories',st);renderStoriesList(st);toast('تم نشر الستوري');return;
-  }
-  try{await addDoc(collection(db,'stories'),{uid:me.uid,author:me.name,text:t,ts:serverTimestamp()});toast('تم نشر الستوري')}catch(e){toast(msg(e))}
-};
+    [hidden] { display: none !important; }
 
-/* ===== الأصدقاء والدردشة ===== */
-$('f-add').onclick=async()=>{
-  const v=$('f-in').value.trim().toUpperCase();if(!/^YXA-\d{6}$/.test(v))return toast('الصيغة: YXA-123456');
-  if(v===me.yxaId)return toast('هذا رقمك أنت');
-  if(!isCloud){
-    const fl=LS.get('friends',[]);
-    if(fl.some(x=>x.yxaId===v))return toast('مضاف مسبقاً');
-    fl.push({id:'f_'+v,name:'عضو '+v,yxaId:v});
-    LS.set('friends',fl);renderFriendsList(fl);$('f-in').value='';toast('تمت الإضافة');return;
-  }
-  try{
-    const s=await getDocs(query(collection(db,'users'),where('yxaId','==',v),limit(1)));
-    if(s.empty)return toast('لا يوجد مستخدم بهذا الرقم');
-    const u=s.docs[0];await setDoc(doc(db,'users',me.uid,'friends',u.id),{name:u.data().name,yxaId:v});
-    $('f-in').value='';toast('تمت الإضافة');
-  }catch(e){toast(msg(e))}
-};
-function stopChat(){if(chatUnsub){chatUnsub();chatUnsub=null}chatFriend=null}
-function openChat(f){
-  stopChat();chatFriend=f;$('c-name').textContent=f.name;$('c-id').textContent=f.yxaId;
-  const id=[me.uid,f.id].sort().join('_');
-  if(!isCloud){
-    const c=$('c-feed');c.innerHTML='';
-    const msgs=LS.get('chat_'+id,[{from:'ot',text:'أهلاً بك! كيف أساعدك؟'}]);
-    msgs.forEach(m=>c.append(el('div','b '+(m.from===me.uid?'me':'ot'),m.text)));
-    c.scrollTop=c.scrollHeight;
-    openM('m-chat');$('c-in').focus();return;
-  }
-  chatUnsub=onSnapshot(query(collection(db,'chats',id,'messages'),orderBy('ts')),s=>{
-    const c=$('c-feed');c.innerHTML='';
-    s.docs.forEach(d=>{const m=d.data(),b=el('div','b '+(m.from===me.uid?'me':'ot'),m.text);b.title=fmt(m.ts);c.append(b)});
-    c.scrollTop=c.scrollHeight;
-  },e=>toast(msg(e)));
-  openM('m-chat');$('c-in').focus();
-}
-async function sendMsg(){
-  const i=$('c-in'),t=i.value.trim();if(!t||!chatFriend)return;
-  const id=[me.uid,chatFriend.id].sort().join('_');i.value='';
-  if(!isCloud){
-    const msgs=LS.get('chat_'+id,[{from:'ot',text:'أهلاً بك! كيف أساعدك؟'}]);
-    msgs.push({from:me.uid,text:t});LS.set('chat_'+id,msgs);
-    const c=$('c-feed');c.append(el('div','b me',t));c.scrollTop=c.scrollHeight;return;
-  }
-  try{await addDoc(collection(db,'chats',id,'messages'),{from:me.uid,text:t,ts:serverTimestamp()})}catch(e){toast(msg(e));i.value=t}
-}
-$('c-send').onclick=sendMsg;$('c-in').onkeydown=e=>{if(e.key==='Enter')sendMsg()};
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 14px;
+    }
 
-/* ===== الذكاء الاصطناعي ===== */
-$('g-save').onclick=()=>{geminiKey=$('g-key').value.trim();try{localStorage.setItem('yxa_gkey',geminiKey)}catch{}toast(geminiKey?'تم حفظ المفتاح':'تم مسح المفتاح')};
-async function callAi(p){
-  if(!geminiKey)throw new Error('أضف مفتاح Gemini API من تبويب الذكاء');
-  let r;try{r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':geminiKey},body:JSON.stringify({contents:[{parts:[{text:p}]}]})})}
-  catch{throw new Error('تعذّر الاتصال بالإنترنت')}
-  if(!r.ok)throw new Error('فشل طلب الذكاء الاصطناعي ('+r.status+') — تحقق من المفتاح');
-  const t=(await r.json()).candidates?.[0]?.content?.parts?.[0]?.text;if(!t)throw new Error('لم يصل رد');return t;
-}
-async function askAi(){
-  const i=$('ai-in'),t=i.value.trim();if(!t)return;const f=$('ai-feed');
-  f.append(el('div','b me',t));i.value='';const w=el('div','b ot','...');f.append(w);
-  try{w.textContent=await callAi(t)}catch(e){w.textContent='⚠️ '+e.message}f.scrollTop=f.scrollHeight;
-}
-$('ai-send').onclick=askAi;$('ai-in').onkeydown=e=>{if(e.key==='Enter')askAi()};
-$('post-ai').onclick=async()=>{
-  const i=$('post-in');if(!i.value.trim())return toast('اكتب نصاً أولاً');
-  try{toast('جاري الصياغة...');i.value=(await callAi('أعد صياغة هذا المنشور بأسلوب جذاب وأعد النص فقط: '+i.value)).trim()}catch(e){toast(e.message)}
-};
+    button, input, textarea { font: inherit; }
 
-/* ===== الحساب ===== */
-$('a-save').onclick=async()=>{
-  const n=$('a-name').value.trim();if(!n)return toast('الاسم مطلوب');
-  if(!isCloud){me.name=n;LS.set('user',me);$('u-name').textContent=n;toast('تم الحفظ');return}
-  try{await updateDoc(doc(db,'users',me.uid),{name:n});me.name=n;$('u-name').textContent=n;toast('تم الحفظ')}catch(e){toast(msg(e))}
-};
-$('a-copy').onclick=()=>safeCopy(me.yxaId);
-</script>
-</body>
-</html>
+    .screen, .modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      overflow: auto;
+    }
+
+    .screen { z-index: 40; background: var(--bg); }
+    .modal { z-index: 50; background: rgb(0 0 0 / 85%); }
+
+    .card {
+      width: 100%;
+      padding: 1.1rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+    }
+
+    .stack > * + * { margin-top: .8rem; }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+    }
+
+    .sp { justify-content: space-between; }
+
+    .inp {
+      width: 100%;
+      min-width: 0;
+      padding: .7rem .9rem;
+      color: var(--fg);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: .85rem;
+      font-size: .85rem;
+      outline: none;
+    }
+
+    .inp:focus {
+      border-color: var(--fg);
+      box-shadow: 0 0 0 2px rgb(128 128 128 / 25%);
+    }
+
+    .inp[readonly] {
+      background: var(--subtle);
+      font-weight: 700;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: .62rem .9rem;
+      color: var(--fg);
+      background: var(--subtle);
+      border: 1px solid var(--border);
+      border-radius: .85rem;
+      font-size: .8rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform .14s, opacity .14s;
+    }
+
+    .btn:hover { opacity: .82; }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .primary {
+      color: var(--inverse-fg);
+      background: var(--inverse);
+      border-color: var(--inverse);
+      font-weight: 900;
+    }
+
+    .muted { color: var(--muted); }
+    .small { font-size: .72rem; }
+    .mono { font-family: monospace; }
+    .bold { font-weight: 900; }
+
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: .4rem;
+      overflow-x: auto;
+      padding: .6rem 0;
+    }
+
+    .tabs .btn { white-space: nowrap; }
+    .tab { display: none; }
+    .tab.on { display: block; }
+    .tab > * + * { margin-top: 1rem; }
+
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      overflow-y: auto;
+    }
+
+    .bubble {
+      max-width: 85%;
+      padding: .7rem;
+      border-radius: 1rem;
+      font-size: .82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .bubble.me {
+      align-self: flex-start;
+      color: var(--inverse-fg);
+      background: var(--inverse);
+    }
+
+    .bubble.other {
+      align-self: flex-end;
+      background: var(--subtle);
+    }
+
+    .item {
+      padding: .75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: .9rem;
+    }
+
+    .error {
+      min-height: 1rem;
+      color: #e11d48;
+      font-size: .75rem;
+      font-weight: 700;
+    }
+
+    #toasts {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 99;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      max-width: min(90vw, 360px);
+    }
+
+    .toast {
+      padding: .7rem 1rem;
+      color: var(--inverse-fg);
+      background: var(--inverse);
+      border-radius: .9rem;
+      font-size: .8rem;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 3.2rem;
+      height: 3.2rem;
+      color: var(--inverse-fg);
+      background: var(--inverse);
+      border-radius: 1rem;
+      font-weight: 900;
+    }
+
+    .post-text {
+      line-height: 1.8;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .story {
+      flex-shrink: 0;
+      max-width: 160px;
+      text-align: right;
+      white-space: normal;
+    }
+
+    @media (max-width: 480px) {
+      .wrap { padding: .65rem; }
+      .card { padding: .9rem; }
+      .profile-actions { flex-wrap: wrap; }
+      .profile-actions .btn { flex: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- إعداد Firebase -->
+  <div id="setup" class="modal" hidden role="dialog" aria-modal="true">
+    <div class="card stack" style="max-width:520px">
+      <div class="row sp">
+        <h2 class="bold">⚙️ إعدادات Firebase</h2>
+        <button class="btn" data-close aria-label="إغلاق">✕</button>
+      </div>
+      <p class="small muted" style="line-height:1.9">
+        أدخل إعدادات مشروع Firebase بصيغة JSON لتفعيل الحسابات والبيانات السحابية.
+        وضع التجربة المحلي لا يوفر مصادقة حقيقية.
+      </p>
+      <textarea id="fb-json" class="inp mono" rows="6" dir="ltr"
+        style="text-align:left"
+        placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea>
+      <div class="row">
+        <button id="fb-save" class="btn primary" style="flex:1">حفظ وتفعيل</button>
+        <button id="fb-clear" class="btn">مسح الإعدادات</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- تسجيل الدخول -->
+  <div id="auth" class="screen" hidden>
+    <div class="card stack" style="max-width:420px">
+      <div class="stack" style="text-align:center">
+        <div class="logo" style="margin:auto">YXA</div>
+        <h2 class="bold">تواصل | YXA</h2>
+        <p id="mode-badge" class="small muted"></p>
+      </div>
+
+      <p id="file-warn" class="error" hidden>
+        ⚠️ الدخول الاجتماعي يحتاج إلى رابط http(s) أو localhost.
+      </p>
+
+      <button class="btn primary provider" data-provider="google" style="width:100%">
+        الدخول بحساب Google
+      </button>
+      <button class="btn provider" data-provider="apple" style="width:100%">
+        الدخول بحساب Apple
+      </button>
+      <button class="btn provider" data-provider="github" style="width:100%">
+        الدخول بحساب GitHub
+      </button>
+
+      <p class="small muted" style="text-align:center">أو بالبريد الإلكتروني</p>
+      <input id="em" type="email" class="inp" placeholder="البريد الإلكتروني" autocomplete="email">
+      <input id="pw" type="password" class="inp"
+        placeholder="كلمة المرور (6 أحرف على الأقل)" autocomplete="current-password">
+
+      <div class="row">
+        <button id="em-in" class="btn primary" style="flex:1">دخول</button>
+        <button id="em-up" class="btn" style="flex:1">إنشاء حساب</button>
+      </div>
+
+      <button id="open-setup" class="btn small" style="width:100%">
+        ⚙️ إعداد مشروع Firebase
+      </button>
+      <p id="auth-err" class="error" role="alert"></p>
+    </div>
+  </div>
+
+  <!-- التطبيق -->
+  <div id="app" hidden>
+    <main class="wrap">
+      <header class="row sp card" style="padding:.75rem 1rem">
+        <div class="row">
+          <div class="logo" style="width:2.4rem;height:2.4rem;font-size:.75rem">YXA</div>
+          <div>
+            <div class="bold">تواصل <span id="u-yxa" class="mono small muted"></span></div>
+            <div id="u-name" class="small muted"></div>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" id="b-theme" title="تغيير المظهر" aria-label="تغيير المظهر">🌓</button>
+          <button class="btn" id="b-out" title="تسجيل الخروج" aria-label="تسجيل الخروج">🚪</button>
+        </div>
+      </header>
+
+      <nav id="tabs" class="tabs" aria-label="التنقل"></nav>
+
+      <section id="t-home" class="tab on">
+        <div class="card stack">
+          <div class="row sp">
+            <b>الستوريات</b>
+            <button class="btn primary" id="st-add">+ ستوري</button>
+          </div>
+          <div id="stories" class="row" style="overflow-x:auto"></div>
+        </div>
+
+        <div class="card stack">
+          <textarea id="post-in" class="inp" rows="2" maxlength="1000"
+            placeholder="ماذا يدور في ذهنك؟" style="resize:vertical"></textarea>
+          <div class="row" style="justify-content:flex-end">
+            <button class="btn" id="post-ai">✨ صياغة بالذكاء</button>
+            <button class="btn primary" id="post-add">نشر</button>
+          </div>
+        </div>
+
+        <div id="posts" class="stack"></div>
+      </section>
+
+      <section id="t-friends" class="tab">
+        <div class="card stack">
+          <b>إضافة صديق برقم YXA</b>
+          <div class="row">
+            <input id="f-in" class="inp mono" placeholder="YXA-123456" dir="ltr">
+            <button class="btn primary" id="f-add">إضافة</button>
+          </div>
+        </div>
+        <div class="card stack">
+          <b>الأصدقاء</b>
+          <div id="f-list" class="stack"></div>
+        </div>
+      </section>
+
+      <section id="t-ai" class="tab">
+        <div class="card stack">
+          <b>🧠 الذكاء الاصطناعي (Gemini)</b>
+          <p class="small muted">
+            المفتاح محفوظ في هذا المتصفح ويُرسل مباشرة إلى Google.
+            لا تستخدمه على جهاز عام.
+          </p>
+          <div class="row">
+            <input id="g-key" type="password" class="inp mono"
+              placeholder="مفتاح Gemini API" autocomplete="off">
+            <button class="btn primary" id="g-save">حفظ</button>
+          </div>
+        </div>
+        <div class="card stack">
+          <div id="ai-feed" class="feed" aria-live="polite"
+            style="min-height:220px;max-height:380px"></div>
+          <div class="row">
+            <input id="ai-in" class="inp" placeholder="اكتب سؤالك...">
+            <button class="btn primary" id="ai-send">إرسال</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="t-me" class="tab">
+        <div class="card stack">
+          <b>الملف الشخصي</b>
+          <div>
+            <label class="small muted" for="a-name">الاسم</label>
+            <input id="a-name" class="inp" maxlength="60">
+          </div>
+          <div>
+            <label class="small muted" for="a-yxa">رقم YXA</label>
+            <input id="a-yxa" class="inp mono" readonly>
+          </div>
+          <div>
+            <label class="small muted" for="a-mail">البريد</label>
+            <input id="a-mail" class="inp" readonly>
+          </div>
+          <div class="row profile-actions">
+            <button class="btn primary" id="a-save">حفظ</button>
+            <button class="btn" id="a-copy">نسخ رقم YXA</button>
+            <button class="btn" id="b-contact">📞 التواصل</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- عرض ستوري -->
+  <div id="m-story" class="modal" hidden role="dialog" aria-modal="true">
+    <div class="card stack" style="max-width:380px">
+      <div class="row sp">
+        <b id="s-by"></b>
+        <button class="btn" data-close aria-label="إغلاق">✕</button>
+      </div>
+      <p id="s-tx" style="padding:2rem 0;text-align:center;font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere"></p>
+    </div>
+  </div>
+
+  <!-- إضافة ستوري -->
+  <div id="m-add-story" class="modal" hidden role="dialog" aria-modal="true">
+    <div class="card stack" style="max-width:400px">
+      <div class="row sp">
+        <b>+ إضافة ستوري جديد</b>
+        <button class="btn" data-close aria-label="إغلاق">✕</button>
+      </div>
+      <textarea id="st-in" class="inp" rows="3" maxlength="300"
+        placeholder="اكتب نص الستوري هنا..."></textarea>
+      <button id="st-save" class="btn primary" style="width:100%">نشر الستوري</button>
+    </div>
+  </div>
+
+  <!-- تأكيد الحذف -->
+  <div id="m-del" class="modal" hidden role="dialog" aria-modal="true">
+    <div class="card stack" style="max-width:340px;text-align:center">
+      <b>هل تريد حذف هذا المنشور؟</b>
+      <div class="row">
+        <button id="del-yes" class="btn primary" style="flex:1">نعم، احذف</button>
+        <button class="btn" data-close style="flex:1">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- التواصل -->
+  <div id="m-contact" class="modal" hidden role="dialog" aria-modal="true">
+    <div class="card stack" style="max-width:400px">
+      <div class="row sp">
+        <b>📞 التواصل المباشر</b>
+        <button class="btn" data-close aria-label="إغلاق">✕</button>
+      </div>
+      <div class="item row sp">
+        <div>
+          <div class="small muted">واتساب مباشر</div>
+          <div class="bold mono" dir="ltr">0563068840</div>
+        </div>
+        <a href="https://wa.me/966563068840" target="_blank"
+          rel="noopener noreferrer" class="btn primary">مراسلة</a>
+      </div>
+      <div class="item row sp">
+        <div>
+          <div class="small muted">البريد الإلكتروني</div>
+          <div class="bold mono" style="font-size:.75rem">ya8827860@gmail.com</div>
+        </div>
+        <button id="copy-mail" class="btn">نسخ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- المحادثة -->
+  <div id="m-chat" class="modal" hidden role="dialog" aria-modal="true">
+    <div class="card stack" style="max-width:520px">
+      <div class="row sp">
+        <div>
+          <b id="c-name"></b>
+          <div id="c-id" class="small mono muted"></div>
+        </div>
+        <button class="btn" data-close aria-label="إغلاق">✕</button>
+      </div>
+      <div id="c-feed" class="feed" style="height:16rem"></div>
+      <div class="row">
+        <input id="c-in" class="inp" maxlength="1000" placeholder="اكتب رسالتك...">
+        <button class="btn primary" id="c-send">إرسال</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider,
+      OAuthProvider, GithubAuthProvider, signInWithEmailAndPassword,
+      createUserWithEmailAndPassword, signOut
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import {
+      getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
+      collection, addDoc, query, where, orderBy, limit, onSnapshot,
+      getDocs, arrayUnion, arrayRemove, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "PASTE_API_KEY",
+      authDomain: "PASTE_PROJECT.firebaseapp.com",
+      projectId: "PASTE_PROJECT_ID",
+      appId: "PASTE_APP_ID"
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function el(tag, className = "", text = null) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== null) node.textContent = String(text);
+      return node;
+    }
+
+    function toast(text) {
+      const node = el("div", "toast", text);
+      $("toasts").append(node);
+      setTimeout(() => node.remove(), 3500);
+    }
+
+    function formatTime(timestamp) {
+      try {
+        return timestamp?.toDate
+          ? timestamp.toDate().toLocaleString("ar-SA", {
+              dateStyle: "medium",
+              timeStyle: "short"
+            })
+          : "الآن";
+      } catch {
+        return "الآن";
+      }
+    }
+
+    const errorMessages = {
+      "auth/unauthorized-domain": "هذا النطاق غير مضاف إلى النطاقات المصرح بها في Firebase.",
+      "auth/operation-not-supported-in-this-environment": "شغّل الصفحة من رابط http(s) أو localhost.",
+      "auth/popup-closed-by-user": "أُغلقت نافذة الدخول.",
+      "auth/cancelled-popup-request": "أُلغيت نافذة الدخول السابقة.",
+      "auth/popup-blocked": "المتصفح حظر النافذة المنبثقة.",
+      "auth/operation-not-allowed": "طريقة الدخول غير مفعّلة في Firebase.",
+      "auth/invalid-credential": "بيانات الدخول غير صحيحة.",
+      "auth/email-already-in-use": "البريد مستخدم مسبقاً.",
+      "auth/weak-password": "كلمة المرور ضعيفة (6 أحرف على الأقل).",
+      "auth/invalid-email": "البريد الإلكتروني غير صالح.",
+      "auth/network-request-failed": "تعذّر الاتصال بالإنترنت.",
+      "permission-denied": "لا توجد صلاحية؛ راجع قواعد Firestore."
+    };
+
+    const errorText = error => errorMessages[error?.code] || error?.message || String(error);
+
+    const LocalStore = {
+      get(key, fallback) {
+        try {
+          return JSON.parse(localStorage.getItem("yxa_db_" + key)) ?? fallback;
+        } catch {
+          return fallback;
+        }
+      },
+      set(key, value) {
+        try {
+          localStorage.setItem("yxa_db_" + key, JSON.stringify(value));
+          return true;
+        } catch {
+          toast("تعذّر الحفظ في هذا المتصفح.");
+          return false;
+        }
+      }
+    };
+
+    function setTheme(theme) {
+      document.documentElement.classList.toggle("dark", theme === "dark");
+      try {
+        localStorage.setItem("yxa_theme", theme);
+      } catch {}
+    }
+
+    try {
+      setTheme(localStorage.getItem("yxa_theme") || "dark");
+    } catch {
+      setTheme("dark");
+    }
+
+    $("b-theme").onclick = () => {
+      setTheme(document.documentElement.classList.contains("dark") ? "light" : "dark");
+    };
+
+    let savedConfig = null;
+    try {
+      savedConfig = JSON.parse(localStorage.getItem("yxa_fb_cfg") || "null");
+    } catch {}
+
+    function isValidConfig(config) {
+      return Boolean(
+        config &&
+        typeof config.apiKey === "string" &&
+        config.apiKey &&
+        !config.apiKey.startsWith("PASTE") &&
+        typeof config.projectId === "string" &&
+        config.projectId &&
+        !config.projectId.startsWith("PASTE") &&
+        config.authDomain &&
+        config.appId
+      );
+    }
+
+    const activeConfig = isValidConfig(savedConfig)
+      ? savedConfig
+      : isValidConfig(firebaseConfig)
+        ? firebaseConfig
+        : null;
+
+    let cloudMode = false;
+    let auth = null;
+    let db = null;
+
+    if (activeConfig) {
+      try {
+        const firebaseApp = initializeApp(activeConfig);
+        auth = getAuth(firebaseApp);
+        db = getFirestore(firebaseApp);
+        cloudMode = true;
+        $("mode-badge").textContent = "الوضع السحابي: Firebase";
+      } catch (error) {
+        $("mode-badge").textContent = "تعذّر تشغيل Firebase: " + errorText(error);
+      }
+    }
+
+    if (!cloudMode) {
+      $("mode-badge").textContent =
+        "وضع تجربة محلي فقط — لا توجد مصادقة أو مزامنة سحابية حقيقية.";
+      document.querySelectorAll(".provider").forEach(button => {
+        button.disabled = true;
+      });
+    }
+
+    if (location.protocol === "file:") {
+      $("file-warn").hidden = false;
+    }
+
+    $("open-setup").onclick = () => {
+      $("fb-json").value = savedConfig ? JSON.stringify(savedConfig, null, 2) : "";
+      $("setup").hidden = false;
+    };
+
+    $("fb-save").onclick = () => {
+      try {
+        const config = JSON.parse($("fb-json").value.trim());
+        if (!isValidConfig(config)) {
+          throw new Error("تحقق من apiKey وauthDomain وprojectId وappId.");
+        }
+        localStorage.setItem("yxa_fb_cfg", JSON.stringify(config));
+        toast("تم حفظ الإعدادات. ستُعاد الصفحة لتفعيلها.");
+        setTimeout(() => location.reload(), 600);
+      } catch (error) {
+        toast("إعدادات غير صالحة: " + error.message);
+      }
+    };
+
+    $("fb-clear").onclick = () => {
+      try {
+        localStorage.removeItem("yxa_fb_cfg");
+      } catch {}
+      toast("تم مسح إعدادات Firebase.");
+      setTimeout(() => location.reload(), 600);
+    };
+
+    let me = null;
+    let posts = [];
+    let pendingDeleteId = null;
+    let chatFriend = null;
+    let chatUnsubscribe = null;
+    let unsubscribers = [];
+    let geminiKey = "";
+
+    try {
+      geminiKey = localStorage.getItem("yxa_gkey") || "";
+    } catch {}
+
+    $("g-key").value = geminiKey;
+
+    function openModal(id) {
+      $(id).hidden = false;
+    }
+
+    function stopChat() {
+      if (chatUnsubscribe) {
+        chatUnsubscribe();
+        chatUnsubscribe = null;
+      }
+      chatFriend = null;
+    }
+
+    function closeModals() {
+      document.querySelectorAll(".modal").forEach(modal => {
+        modal.hidden = true;
+      });
+      stopChat();
+    }
+
+    document.querySelectorAll("[data-close]").forEach(button => {
+      button.onclick = closeModals;
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeModals();
+    });
+
+    async function copyText(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const textarea = el("textarea");
+          textarea.value = text;
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          document.body.append(textarea);
+          textarea.select();
+          const copied = document.execCommand("copy");
+          textarea.remove();
+          if (!copied) throw new Error("تعذّر النسخ");
+        }
+        toast("تم النسخ: " + text);
+      } catch {
+        toast("تعذّر النسخ. انسخ النص يدوياً: " + text);
+      }
+    }
+
+    $("b-contact").onclick = () => openModal("m-contact");
+    $("copy-mail").onclick = () => copyText("ya8827860@gmail.com");
+
+    const tabs = [
+      ["home", "🏠 الرئيسية"],
+      ["friends", "👥 الأصدقاء"],
+      ["ai", "🧠 الذكاء"],
+      ["me", "👤 حسابي"]
+    ];
+
+    tabs.forEach(([id, label], index) => {
+      const button = el("button", "btn" + (index === 0 ? " primary" : ""), label);
+      button.type = "button";
+      button.onclick = () => {
+        document.querySelectorAll(".tab").forEach(section => {
+          section.classList.toggle("on", section.id === "t-" + id);
+        });
+        $("tabs").querySelectorAll(".btn").forEach(tabButton => {
+          tabButton.classList.toggle("primary", tabButton === button);
+        });
+      };
+      $("tabs").append(button);
+    });
+
+    function updateProfileUI() {
+      if (!me) return;
+      $("u-yxa").textContent = me.yxaId;
+      $("u-name").textContent = me.name;
+      $("a-name").value = me.name;
+      $("a-yxa").value = me.yxaId;
+      $("a-mail").value = me.email || "(بدون بريد)";
+    }
+
+    function createLocalProfile(email) {
+      const storageKey = "yxa_demo_user_" + email.toLowerCase();
+      let profile = null;
+      try {
+        profile = JSON.parse(localStorage.getItem(storageKey) || "null");
+      } catch {}
+
+      if (!profile) {
+        const uid = globalThis.crypto?.randomUUID
+          ? globalThis.crypto.randomUUID()
+          : Date.now() + "_" + Math.random().toString(36).slice(2);
+
+        profile = {
+          uid: "local_" + uid,
+          name: email.split("@")[0] || "مستخدم YXA",
+          yxaId: "YXA-" + Math.floor(100000 + Math.random() * 900000),
+          email
+        };
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(profile));
+        } catch {}
+      }
+      return profile;
+    }
+
+    function enterLocalSession(email) {
+      me = createLocalProfile(email);
+      try {
+        localStorage.setItem("yxa_demo_last_email", email);
+      } catch {}
+      $("auth").hidden = true;
+      $("app").hidden = false;
+      updateProfileUI();
+      renderLocalData();
+      toast("تم الدخول إلى وضع التجربة المحلي.");
+    }
+
+    function authError(text) {
+      $("auth-err").textContent = text || "";
+    }
+
+    const providers = {
+      google: () => new GoogleAuthProvider(),
+      github: () => new GithubAuthProvider(),
+      apple: () => {
+        const provider = new OAuthProvider("apple.com");
+        provider.addScope("email");
+        provider.addScope("name");
+        return provider;
+      }
+    };
+
+    document.querySelectorAll("[data-provider]").forEach(button => {
+      button.onclick = async () => {
+        authError();
+        if (!cloudMode) {
+          authError("فعّل Firebase أولاً لاستخدام تسجيل الدخول الاجتماعي.");
+          return;
+        }
+        try {
+          await signInWithPopup(auth, providers[button.dataset.provider]());
+        } catch (error) {
+          authError(errorText(error));
+        }
+      };
+    });
+
+    async function emailAuth(createAccount) {
+      authError();
+      const email = $("em").value.trim();
+      const password = $("pw").value;
+
+      if (!email || !password) {
+        authError("أدخل البريد الإلكتروني وكلمة المرور.");
+        return;
+      }
+      if (password.length < 6) {
+        authError("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
+        return;
+      }
+      if (!cloudMode) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          authError("البريد الإلكتروني غير صالح.");
+          return;
+        }
+        enterLocalSession(email);
+        return;
+      }
+
+      try {
+        if (createAccount) {
+          await createUserWithEmailAndPassword(auth, email, password);
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+        }
+      } catch (error) {
+        authError(errorText(error));
+      }
+    }
+
+    $("em-in").onclick = () => emailAuth(false);
+    $("em-up").onclick = () => emailAuth(true);
+    $("pw").onkeydown = event => {
+      if (event.key === "Enter") emailAuth(false);
+    };
+
+    $("b-out").onclick = async () => {
+      if (!cloudMode) {
+        me = null;
+        try {
+          localStorage.removeItem("yxa_demo_last_email");
+        } catch {}
+        closeModals();
+        $("app").hidden = true;
+        $("auth").hidden = false;
+        return;
+      }
+      try {
+        await signOut(auth);
+      } catch (error) {
+        toast(errorText(error));
+      }
+    };
+
+    async function ensureProfile(user) {
+      const profileRef = doc(db, "users", user.uid);
+      const snapshot = await getDoc(profileRef);
+      if (snapshot.exists()) {
+        return { uid: user.uid, ...snapshot.data() };
+      }
+
+      let yxaId = null;
+      for (let attempt = 0; attempt < 8 && !yxaId; attempt++) {
+        const candidate = "YXA-" + Math.floor(100000 + Math.random() * 900000);
+        const existing = await getDocs(
+          query(collection(db, "users"), where("yxaId", "==", candidate), limit(1))
+        );
+        if (existing.empty) yxaId = candidate;
+      }
+
+      if (!yxaId) {
+        throw new Error("تعذّر إنشاء رقم YXA، أعد المحاولة.");
+      }
+
+      const profile = {
+        name: user.displayName || (user.email || "مستخدم").split("@")[0],
+        yxaId,
+        created: serverTimestamp()
+      };
+      await setDoc(profileRef, profile);
+      return { uid: user.uid, ...profile };
+    }
+
+    function renderStories(items) {
+      const container = $("stories");
+      container.replaceChildren();
+
+      items.forEach(story => {
+        const button = el("button", "btn story");
+        button.type = "button";
+        button.append(
+          el("span", "small muted", story.author || "عضو"),
+          el("span", "", String(story.text || "").slice(0, 30))
+        );
+        button.onclick = () => {
+          $("s-by").textContent = story.author || "عضو";
+          $("s-tx").textContent = story.text || "";
+          openModal("m-story");
+        };
+        container.append(button);
+      });
+
+      if (!items.length) {
+        container.append(el("span", "small muted", "لا توجد ستوريات"));
+      }
+    }
+
+    function renderFriends(items) {
+      const list = $("f-list");
+      list.replaceChildren();
+
+      items.forEach(friend => {
+        const row = el("div", "item row sp");
+        const details = el("div");
+        const chatButton = el("button", "btn primary", "💬 محادثة");
+
+        details.append(
+          el("div", "bold", friend.name || "عضو"),
+          el("div", "small mono muted", friend.yxaId || "")
+        );
+        chatButton.type = "button";
+        chatButton.onclick = () => openChat(friend);
+        row.append(details, chatButton);
+        list.append(row);
+      });
+
+      if (!items.length) {
+        list.append(el("p", "small muted", "لم تضف أصدقاء بعد."));
+      }
+    }
+
+    function renderPosts() {
+      const feed = $("posts");
+      feed.replaceChildren();
+
+      posts.forEach(post => {
+        const card = el("article", "card stack");
+        const header = el("div", "row sp");
+        const actions = el("div", "row");
+        const likes = Array.isArray(post.likes) ? post.likes : [];
+        const likedByMe = Boolean(me && likes.includes(me.uid));
+
+        header.append(
+          el("b", "", post.author || "عضو"),
+          el("span", "small muted", post.timeStr || formatTime(post.ts))
+        );
+
+        const text = el("p", "post-text", post.text || "");
+        const likeButton = el(
+          "button",
+          "btn" + (likedByMe ? " primary" : ""),
+          "❤️ " + likes.length
+        );
+        likeButton.type = "button";
+        likeButton.onclick = () => toggleLike(post, likes, likedByMe);
+        actions.append(likeButton);
+
+        if (me && post.uid === me.uid) {
+          const delete
