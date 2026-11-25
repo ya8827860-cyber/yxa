@@ -1007,4 +1007,413 @@
         actions.append(likeButton);
 
         if (me && post.uid === me.uid) {
-          const delete
+          const deleteButton = el("button", "btn", "🗑️ حذف");
+          deleteButton.type = "button";
+          deleteButton.onclick = () => {
+            pendingDeleteId = post.id;
+            openModal("m-del");
+          };
+          actions.append(deleteButton);
+        }
+
+        card.append(header, text, actions);
+        feed.append(card);
+      });
+    }
+
+    function renderLocalData() {
+      posts = LocalStore.get("posts", [{
+        id: "welcome",
+        uid: "system",
+        author: "إدارة YXA",
+        text: "مرحباً بك في منصة تواصل | YXA!",
+        likes: [],
+        timeStr: "الآن"
+      }]);
+
+      renderPosts();
+      renderStories(LocalStore.get("stories", [{
+        author: "تواصل",
+        text: "أهلاً بك في تواصل YXA ✨"
+      }]));
+      renderFriends(LocalStore.get("friends", [{
+        id: "support",
+        name: "الدعم الفني YXA",
+        yxaId: "YXA-056306"
+      }]));
+    }
+
+    function listenToCloudData() {
+      unsubscribers.forEach(unsubscribe => unsubscribe());
+      unsubscribers = [];
+      const onError = error => toast(errorText(error));
+
+      unsubscribers.push(
+        onSnapshot(
+          query(collection(db, "posts"), orderBy("ts", "desc"), limit(50)),
+          snapshot => {
+            posts = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+            renderPosts();
+          },
+          onError
+        )
+      );
+
+      unsubscribers.push(
+        onSnapshot(
+          query(collection(db, "stories"), orderBy("ts", "desc"), limit(20)),
+          snapshot => {
+            renderStories(snapshot.docs.map(item => ({ id: item.id, ...item.data() })));
+          },
+          onError
+        )
+      );
+
+      unsubscribers.push(
+        onSnapshot(
+          collection(db, "users", me.uid, "friends"),
+          snapshot => {
+            renderFriends(snapshot.docs.map(item => ({ id: item.id, ...item.data() })));
+          },
+          onError
+        )
+      );
+    }
+
+    if (cloudMode && auth) {
+      onAuthStateChanged(auth, async user => {
+        unsubscribers.forEach(unsubscribe => unsubscribe());
+        unsubscribers = [];
+        stopChat();
+
+        if (!user) {
+          me = null;
+          $("app").hidden = true;
+          $("auth").hidden = false;
+          return;
+        }
+
+        try {
+          me = await ensureProfile(user);
+          if (!me.email && user.email) me.email = user.email;
+          updateProfileUI();
+          $("auth").hidden = true;
+          $("app").hidden = false;
+          listenToCloudData();
+        } catch (error) {
+          toast(errorText(error));
+        }
+      });
+    } else {
+      const lastEmail = localStorage.getItem("yxa_demo_last_email");
+      if (lastEmail) {
+        enterLocalSession(lastEmail);
+      } else {
+        $("auth").hidden = false;
+        $("app").hidden = true;
+      }
+    }
+
+    $("post-add").onclick = async () => {
+      const text = $("post-in").value.trim();
+      if (!text || !me) return;
+
+      if (!cloudMode) {
+        posts = [{
+          id: "p_" + Date.now(),
+          uid: me.uid,
+          author: me.name,
+          text,
+          likes: [],
+          timeStr: "الآن"
+        }, ...posts];
+        LocalStore.set("posts", posts);
+        $("post-in").value = "";
+        renderPosts();
+        toast("تم نشر المنشور محلياً.");
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, "posts"), {
+          uid: me.uid,
+          author: me.name,
+          text,
+          likes: [],
+          ts: serverTimestamp()
+        });
+        $("post-in").value = "";
+        toast("تم النشر.");
+      } catch (error) {
+        toast(errorText(error));
+      }
+    };
+
+    async function toggleLike(post, likes, likedByMe) {
+      if (!me) return;
+      const nextLikes = likedByMe
+        ? likes.filter(id => id !== me.uid)
+        : [...likes, me.uid];
+
+      if (!cloudMode) {
+        posts = posts.map(item => item.id === post.id ? { ...item, likes: nextLikes } : item);
+        LocalStore.set("posts", posts);
+        renderPosts();
+        return;
+      }
+
+      try {
+        await updateDoc(doc(db, "posts", post.id), {
+          likes: likedByMe ? arrayRemove(me.uid) : arrayUnion(me.uid)
+        });
+      } catch (error) {
+        toast(errorText(error));
+      }
+    }
+
+    $("del-yes").onclick = async () => {
+      if (!pendingDeleteId) return;
+      const id = pendingDeleteId;
+      pendingDeleteId = null;
+      closeModals();
+
+      if (!cloudMode) {
+        posts = posts.filter(item => item.id !== id);
+        LocalStore.set("posts", posts);
+        renderPosts();
+        toast("تم حذف المنشور.");
+        return;
+      }
+
+      try {
+        await deleteDoc(doc(db, "posts", id));
+        toast("تم حذف المنشور.");
+      } catch (error) {
+        toast(errorText(error));
+      }
+    };
+
+    $("st-add").onclick = () => {
+      $("st-in").value = "";
+      openModal("m-add-story");
+    };
+
+    $("st-save").onclick = async () => {
+      const text = $("st-in").value.trim();
+      if (!text || !me) return;
+
+      if (!cloudMode) {
+        const current = LocalStore.get("stories", []);
+        const updated = [{ author: me.name, text }, ...current].slice(0, 20);
+        LocalStore.set("stories", updated);
+        renderStories(updated);
+        closeModals();
+        toast("تم نشر الستوري محلياً.");
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, "stories"), {
+          uid: me.uid,
+          author: me.name,
+          text,
+          ts: serverTimestamp()
+        });
+        closeModals();
+        toast("تم نشر الستوري.");
+      } catch (error) {
+        toast(errorText(error));
+      }
+    };
+
+    $("f-add").onclick = async () => {
+      const code = $("f-in").value.trim().toUpperCase();
+      if (!code || !me) return;
+
+      if (!cloudMode) {
+        const current = LocalStore.get("friends", []);
+        if (current.some(item => item.yxaId === code)) {
+          toast("هذا الصديق مضاف بالفعل.");
+          return;
+        }
+        const updated = [...current, { id: "f_" + Date.now(), name: code, yxaId: code }];
+        LocalStore.set("friends", updated);
+        renderFriends(updated);
+        $("f-in").value = "";
+        toast("تمت الإضافة محلياً.");
+        return;
+      }
+
+      try {
+        const snap = await getDocs(
+          query(collection(db, "users"), where("yxaId", "==", code), limit(1))
+        );
+        if (snap.empty) {
+          toast("لم يتم العثور على مستخدم بهذا الرقم.");
+          return;
+        }
+        const target = snap.docs[0];
+        if (target.id === me.uid) {
+          toast("لا يمكنك إضافة نفسك.");
+          return;
+        }
+        await setDoc(doc(db, "users", me.uid, "friends", target.id), {
+          name: target.data().name || "عضو",
+          yxaId: target.data().yxaId || code
+        });
+        $("f-in").value = "";
+        toast("تمت إضافة الصديق.");
+      } catch (error) {
+        toast(errorText(error));
+      }
+    };
+
+    function chatRoomId(uidA, uidB) {
+      return [uidA, uidB].sort().join("_");
+    }
+
+    function renderChatMessages(messages) {
+      const feed = $("c-feed");
+      feed.replaceChildren();
+      messages.forEach(msg => {
+        const isMe = me && msg.senderId === me.uid;
+        feed.append(el("div", "bubble " + (isMe ? "me" : "other"), msg.text || ""));
+      });
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function openChat(friend) {
+      stopChat();
+      chatFriend = friend;
+      $("c-name").textContent = friend.name || "عضو";
+      $("c-id").textContent = friend.yxaId || "";
+      $("c-in").value = "";
+      openModal("m-chat");
+
+      if (!cloudMode || !me || !friend.id || friend.id === "support") {
+        const key = "chat_" + (friend.yxaId || friend.id || "default");
+        renderChatMessages(LocalStore.get(key, []));
+        return;
+      }
+
+      const roomId = chatRoomId(me.uid, friend.id);
+      chatUnsubscribe = onSnapshot(
+        query(collection(db, "chats", roomId, "messages"), orderBy("ts", "asc"), limit(100)),
+        snap => {
+          renderChatMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        },
+        error => toast(errorText(error))
+      );
+    }
+
+    $("c-send").onclick = async () => {
+      const text = $("c-in").value.trim();
+      if (!text || !me || !chatFriend) return;
+
+      if (!cloudMode || !chatFriend.id || chatFriend.id === "support") {
+        const key = "chat_" + (chatFriend.yxaId || chatFriend.id || "default");
+        const next = [...LocalStore.get(key, []), { senderId: me.uid, text }];
+        LocalStore.set(key, next);
+        $("c-in").value = "";
+        renderChatMessages(next);
+        return;
+      }
+
+      try {
+        const roomId = chatRoomId(me.uid, chatFriend.id);
+        await addDoc(collection(db, "chats", roomId, "messages"), {
+          senderId: me.uid,
+          text,
+          ts: serverTimestamp()
+        });
+        $("c-in").value = "";
+      } catch (error) {
+        toast(errorText(error));
+      }
+    };
+
+    $("a-save").onclick = async () => {
+      const nextName = $("a-name").value.trim();
+      if (!nextName || !me) return;
+      me.name = nextName;
+      updateProfileUI();
+
+      if (!cloudMode) {
+        if (me.email) {
+          localStorage.setItem("yxa_demo_user_" + me.email.toLowerCase(), JSON.stringify(me));
+        }
+        toast("تم حفظ الاسم محلياً.");
+        return;
+      }
+
+      try {
+        await updateDoc(doc(db, "users", me.uid), { name: nextName });
+        toast("تم تحديث الاسم.");
+      } catch (error) {
+        toast(errorText(error));
+      }
+    };
+
+    $("a-copy").onclick = () => {
+      if (me?.yxaId) copyText(me.yxaId);
+    };
+
+    $("g-save").onclick = () => {
+      geminiKey = $("g-key").value.trim();
+      try {
+        localStorage.setItem("yxa_gkey", geminiKey);
+        toast("تم حفظ مفتاح Gemini.");
+      } catch {
+        toast("تعذّر حفظ المفتاح.");
+      }
+    };
+
+    async function askGemini(prompt) {
+      if (!geminiKey) {
+        toast("أدخل مفتاح Gemini API أولاً.");
+        return null;
+      }
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+          })
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message || "فشل طلب Gemini");
+      return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "لم يرد النموذج بنص.";
+    }
+
+    $("ai-send").onclick = async () => {
+      const prompt = $("ai-in").value.trim();
+      if (!prompt) return;
+      $("ai-in").value = "";
+      $("ai-feed").append(el("div", "bubble me", prompt));
+      try {
+        const reply = await askGemini(prompt);
+        if (reply) $("ai-feed").append(el("div", "bubble other", reply));
+      } catch (error) {
+        toast(errorText(error));
+      }
+    };
+
+    $("post-ai").onclick = async () => {
+      const draft = $("post-in").value.trim();
+      if (!draft) {
+        toast("اكتب مسودة أولاً ليصيغها الذكاء الاصطناعي.");
+        return;
+      }
+      try {
+        const polished = await askGemini(`أعد صياغة المنشور التالي بأسلوب واضح وجذاب باللغة العربية دون مقدمات:\n${draft}`);
+        if (polished) $("post-in").value = polished;
+      } catch (error) {
+        toast(errorText(error));
+      }
+    };
+  </script>
+</body>
+</html>
