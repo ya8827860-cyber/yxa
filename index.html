@@ -1408,7 +1408,9 @@
         return;
       }
       try {
-        const polished = await askGemini(`أعد صياغة المنشور التالي بأسلوب واضح وجذاب باللغة العربية دون مقدمات:\n${draft}`);
+        const polished = await askGemini(
+          `أعد صياغة المنشور التالي بأسلوب واضح وجذاب باللغة العربية دون مقدمات:\n${draft}`
+        );
         if (polished) $("post-in").value = polished;
       } catch (error) {
         toast(errorText(error));
