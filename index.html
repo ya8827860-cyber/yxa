@@ -270,7 +270,7 @@
         <button class="btn" data-close aria-label="إغلاق">✕</button>
       </div>
       <p class="small muted" style="line-height:1.9">
-        أدخل إعدادات مشروع Firebase بصيغة JSON لتفعيل الحسابات والبيانات السحابية.
+        أدخل إعدادات مشروع Firebase بصيغة JSON لتفعيل الحسابات والبيانات السحابية وخدمة Firebase AI.
         وضع التجربة المحلي لا يوفر مصادقة حقيقية.
       </p>
       <textarea id="fb-json" class="inp mono" rows="6" dir="ltr"
@@ -379,14 +379,13 @@
 
       <section id="t-ai" class="tab">
         <div class="card stack">
-          <b>🧠 الذكاء الاصطناعي (Gemini)</b>
-          <p class="small muted">
-            المفتاح محفوظ في هذا المتصفح ويُرسل مباشرة إلى Google.
-            لا تستخدمه على جهاز عام.
+          <b>🧠 الذكاء الاصطناعي (gemini-4-hydrogen)</b>
+          <p id="ai-mode-note" class="small muted">
+            يتم الاتصال عبر Firebase AI وواجهة AgentPlatformBackend عند تفعيل Firebase، أو عبر مفتاح Gemini في الوضع المحلي.
           </p>
-          <div class="row">
+          <div class="row" id="g-key-row">
             <input id="g-key" type="password" class="inp mono"
-              placeholder="مفتاح Gemini API" autocomplete="off">
+              placeholder="مفتاح Gemini API (للوضع المحلي فقط)" autocomplete="off">
             <button class="btn primary" id="g-save">حفظ</button>
           </div>
         </div>
@@ -504,17 +503,20 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
     import {
       getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider,
       OAuthProvider, GithubAuthProvider, signInWithEmailAndPassword,
       createUserWithEmailAndPassword, signOut
-    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
     import {
       getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
       collection, addDoc, query, where, orderBy, limit, onSnapshot,
       getDocs, arrayUnion, arrayRemove, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import {
+      getAI, getGenerativeModel, AgentPlatformBackend
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-ai.js";
 
     const firebaseConfig = {
       apiKey: "PASTE_API_KEY",
@@ -632,14 +634,20 @@
     let cloudMode = false;
     let auth = null;
     let db = null;
+    let aiModel = null;
 
     if (activeConfig) {
       try {
         const firebaseApp = initializeApp(activeConfig);
         auth = getAuth(firebaseApp);
         db = getFirestore(firebaseApp);
+        const ai = getAI(firebaseApp, { backend: new AgentPlatformBackend() });
+        aiModel = getGenerativeModel(ai, { model: "gemini-4-hydrogen" });
         cloudMode = true;
-        $("mode-badge").textContent = "الوضع السحابي: Firebase";
+        $("mode-badge").textContent = "الوضع السحابي: Firebase + AgentPlatformBackend";
+        $("ai-mode-note").textContent =
+          "مفعّل عبر Firebase AI (AgentPlatformBackend) مع النموذج gemini-4-hydrogen.";
+        $("g-key-row").hidden = true;
       } catch (error) {
         $("mode-badge").textContent = "تعذّر تشغيل Firebase: " + errorText(error);
       }
@@ -648,6 +656,8 @@
     if (!cloudMode) {
       $("mode-badge").textContent =
         "وضع تجربة محلي فقط — لا توجد مصادقة أو مزامنة سحابية حقيقية.";
+      $("ai-mode-note").textContent =
+        "أنت في الوضع المحلي؛ أدخل مفتاح Gemini API لاستخدام الذكاء الاصطناعي أو فعّل Firebase لاستخدام AgentPlatformBackend.";
       document.querySelectorAll(".provider").forEach(button => {
         button.disabled = true;
       });
@@ -1369,10 +1379,17 @@
     };
 
     async function askGemini(prompt) {
+      if (cloudMode && aiModel) {
+        const result = await aiModel.generateContent(prompt);
+        const text = result?.response?.text?.();
+        return text?.trim() || "لم يرد النموذج بنص.";
+      }
+
       if (!geminiKey) {
-        toast("أدخل مفتاح Gemini API أولاً.");
+        toast("أدخل مفتاح Gemini API أو فعّل Firebase لاستخدام AgentPlatformBackend.");
         return null;
       }
+
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`,
         {
@@ -1408,9 +1425,7 @@
         return;
       }
       try {
-        const polished = await askGemini(
-          `أعد صياغة المنشور التالي بأسلوب واضح وجذاب باللغة العربية دون مقدمات:\n${draft}`
-        );
+        const polished = await askGemini(`أعد صياغة المنشور التالي بأسلوب واضح وجذاب باللغة العربية دون مقدمات:\n${draft}`);
         if (polished) $("post-in").value = polished;
       } catch (error) {
         toast(errorText(error));
