@@ -567,7 +567,6 @@
       }
     };
 
-    // المظهر
     function setTheme(theme) {
       document.documentElement.classList.toggle("dark", theme === "dark");
       try {
@@ -585,7 +584,6 @@
       setTheme(document.documentElement.classList.contains("dark") ? "light" : "dark");
     };
 
-    // حالة التطبيق
     let me = null;
     let posts = [];
     let pendingDeleteId = null;
@@ -599,7 +597,6 @@
     } catch {}
     $("g-key").value = geminiKey;
 
-    // النوافذ
     function openModal(id) {
       $(id).hidden = false;
     }
@@ -627,7 +624,6 @@
       if (event.key === "Escape") closeModals();
     });
 
-    // نسخ النص
     async function copyText(text) {
       try {
         if (navigator.clipboard && window.isSecureContext) {
@@ -652,7 +648,6 @@
     $("b-contact").onclick = () => openModal("m-contact");
     $("copy-mail").onclick = () => copyText("ya8827860@gmail.com");
 
-    // التبويبات
     const tabs = [
       ["home", "🏠 الرئيسية"],
       ["friends", "👥 الأصدقاء"],
@@ -674,7 +669,6 @@
       $("tabs").append(button);
     });
 
-    // عرض البيانات
     function updateProfileUI() {
       if (!me) return;
       $("u-yxa").textContent = me.yxaId;
@@ -836,12 +830,14 @@
       $("auth-err").textContent = text || "";
     }
 
-    // إعداد Firebase
     const firebaseConfig = {
-      apiKey: "PASTE_API_KEY",
-      authDomain: "PASTE_PROJECT.firebaseapp.com",
-      projectId: "PASTE_PROJECT_ID",
-      appId: "PASTE_APP_ID"
+      apiKey: "AIzaSyDfDU6HT0mtAbiLlcuBXxrysTmHNI-rFEo",
+      authDomain: "yxa1-9833a.firebaseapp.com",
+      projectId: "yxa1-9833a",
+      storageBucket: "yxa1-9833a.firebasestorage.app",
+      messagingSenderId: "822764592315",
+      appId: "1:822764592315:web:12c11fc8ec855405cc1d9e",
+      measurementId: "G-HJLW4BRQC5"
     };
 
     let savedConfig = null;
@@ -880,7 +876,7 @@
     }
 
     $("open-setup").onclick = () => {
-      $("fb-json").value = savedConfig ? JSON.stringify(savedConfig, null, 2) : "";
+      $("fb-json").value = savedConfig ? JSON.stringify(savedConfig, null, 2) : JSON.stringify(firebaseConfig, null, 2);
       $("setup").hidden = false;
     };
 
@@ -987,9 +983,8 @@
           auth = authMod.getAuth(firebaseApp);
           db = fsMod.getFirestore(firebaseApp);
           cloudMode = true;
-          $("mode-badge").textContent = "الوضع السحابي: Firebase";
+          $("mode-badge").textContent = "الوضع السحابي: Firebase (" + activeConfig.projectId + ")";
 
-          // محاولة تهيئة Firebase AI إن وجدت في الحزمة دون تعطيل باقي التطبيق
           try {
             const aiMod = await import(`https://www.gstatic.com/firebasejs/${v}/firebase-ai.js`);
             if (typeof aiMod.getAI === "function" && typeof aiMod.getGenerativeModel === "function") {
@@ -1049,7 +1044,6 @@
       }
     }
 
-    // أزرار الدخول
     document.querySelectorAll("[data-provider]").forEach(button => {
       button.onclick = async () => {
         authError();
@@ -1131,7 +1125,6 @@
       }
     };
 
-    // المنشورات
     $("post-add").onclick = async () => {
       const text = $("post-in").value.trim();
       if (!text || !me) return;
@@ -1211,7 +1204,6 @@
       }
     };
 
-    // الستوريات
     $("st-add").onclick = () => {
       $("st-in").value = "";
       openModal("m-add-story");
@@ -1245,7 +1237,6 @@
       }
     };
 
-    // الأصدقاء والمحادثات
     $("f-add").onclick = async () => {
       const code = $("f-in").value.trim().toUpperCase();
       if (!code || !me) return;
@@ -1352,7 +1343,6 @@
       }
     };
 
-    // الملف الشخصي
     $("a-save").onclick = async () => {
       const nextName = $("a-name").value.trim();
       if (!nextName || !me) return;
@@ -1379,7 +1369,6 @@
       if (me?.yxaId) copyText(me.yxaId);
     };
 
-    // الذكاء الاصطناعي
     $("g-save").onclick = () => {
       geminiKey = $("g-key").value.trim();
       try {
