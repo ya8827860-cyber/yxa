@@ -270,7 +270,7 @@
         <button class="btn" data-close aria-label="إغلاق">✕</button>
       </div>
       <p class="small muted" style="line-height:1.9">
-        أدخل إعدادات مشروع Firebase بصيغة JSON لتفعيل الحسابات والبيانات السحابية وخدمة Firebase AI.
+        أدخل إعدادات مشروع Firebase بصيغة JSON لتفعيل الحسابات والبيانات السحابية.
         وضع التجربة المحلي لا يوفر مصادقة حقيقية.
       </p>
       <textarea id="fb-json" class="inp mono" rows="6" dir="ltr"
@@ -284,12 +284,12 @@
   </div>
 
   <!-- تسجيل الدخول -->
-  <div id="auth" class="screen" hidden>
+  <div id="auth" class="screen">
     <div class="card stack" style="max-width:420px">
       <div class="stack" style="text-align:center">
         <div class="logo" style="margin:auto">YXA</div>
         <h2 class="bold">تواصل | YXA</h2>
-        <p id="mode-badge" class="small muted"></p>
+        <p id="mode-badge" class="small muted">جاري التحميل...</p>
       </div>
 
       <p id="file-warn" class="error" hidden>
@@ -379,13 +379,13 @@
 
       <section id="t-ai" class="tab">
         <div class="card stack">
-          <b>🧠 الذكاء الاصطناعي (gemini-4-hydrogen)</b>
+          <b>🧠 الذكاء الاصطناعي</b>
           <p id="ai-mode-note" class="small muted">
-            يتم الاتصال عبر Firebase AI وواجهة AgentPlatformBackend عند تفعيل Firebase، أو عبر مفتاح Gemini في الوضع المحلي.
+            أدخل مفتاح Gemini API لاستخدام الذكاء الاصطناعي، أو فعّل Firebase.
           </p>
           <div class="row" id="g-key-row">
             <input id="g-key" type="password" class="inp mono"
-              placeholder="مفتاح Gemini API (للوضع المحلي فقط)" autocomplete="off">
+              placeholder="مفتاح Gemini API" autocomplete="off">
             <button class="btn primary" id="g-save">حفظ</button>
           </div>
         </div>
@@ -503,28 +503,6 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-    import {
-      getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider,
-      OAuthProvider, GithubAuthProvider, signInWithEmailAndPassword,
-      createUserWithEmailAndPassword, signOut
-    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-    import {
-      getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
-      collection, addDoc, query, where, orderBy, limit, onSnapshot,
-      getDocs, arrayUnion, arrayRemove, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-    import {
-      getAI, getGenerativeModel, AgentPlatformBackend
-    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-ai.js";
-
-    const firebaseConfig = {
-      apiKey: "PASTE_API_KEY",
-      authDomain: "PASTE_PROJECT.firebaseapp.com",
-      projectId: "PASTE_PROJECT_ID",
-      appId: "PASTE_APP_ID"
-    };
-
     const $ = id => document.getElementById(id);
 
     function el(tag, className = "", text = null) {
@@ -589,6 +567,7 @@
       }
     };
 
+    // المظهر
     function setTheme(theme) {
       document.documentElement.classList.toggle("dark", theme === "dark");
       try {
@@ -606,94 +585,7 @@
       setTheme(document.documentElement.classList.contains("dark") ? "light" : "dark");
     };
 
-    let savedConfig = null;
-    try {
-      savedConfig = JSON.parse(localStorage.getItem("yxa_fb_cfg") || "null");
-    } catch {}
-
-    function isValidConfig(config) {
-      return Boolean(
-        config &&
-        typeof config.apiKey === "string" &&
-        config.apiKey &&
-        !config.apiKey.startsWith("PASTE") &&
-        typeof config.projectId === "string" &&
-        config.projectId &&
-        !config.projectId.startsWith("PASTE") &&
-        config.authDomain &&
-        config.appId
-      );
-    }
-
-    const activeConfig = isValidConfig(savedConfig)
-      ? savedConfig
-      : isValidConfig(firebaseConfig)
-        ? firebaseConfig
-        : null;
-
-    let cloudMode = false;
-    let auth = null;
-    let db = null;
-    let aiModel = null;
-
-    if (activeConfig) {
-      try {
-        const firebaseApp = initializeApp(activeConfig);
-        auth = getAuth(firebaseApp);
-        db = getFirestore(firebaseApp);
-        const ai = getAI(firebaseApp, { backend: new AgentPlatformBackend() });
-        aiModel = getGenerativeModel(ai, { model: "gemini-4-hydrogen" });
-        cloudMode = true;
-        $("mode-badge").textContent = "الوضع السحابي: Firebase + AgentPlatformBackend";
-        $("ai-mode-note").textContent =
-          "مفعّل عبر Firebase AI (AgentPlatformBackend) مع النموذج gemini-4-hydrogen.";
-        $("g-key-row").hidden = true;
-      } catch (error) {
-        $("mode-badge").textContent = "تعذّر تشغيل Firebase: " + errorText(error);
-      }
-    }
-
-    if (!cloudMode) {
-      $("mode-badge").textContent =
-        "وضع تجربة محلي فقط — لا توجد مصادقة أو مزامنة سحابية حقيقية.";
-      $("ai-mode-note").textContent =
-        "أنت في الوضع المحلي؛ أدخل مفتاح Gemini API لاستخدام الذكاء الاصطناعي أو فعّل Firebase لاستخدام AgentPlatformBackend.";
-      document.querySelectorAll(".provider").forEach(button => {
-        button.disabled = true;
-      });
-    }
-
-    if (location.protocol === "file:") {
-      $("file-warn").hidden = false;
-    }
-
-    $("open-setup").onclick = () => {
-      $("fb-json").value = savedConfig ? JSON.stringify(savedConfig, null, 2) : "";
-      $("setup").hidden = false;
-    };
-
-    $("fb-save").onclick = () => {
-      try {
-        const config = JSON.parse($("fb-json").value.trim());
-        if (!isValidConfig(config)) {
-          throw new Error("تحقق من apiKey وauthDomain وprojectId وappId.");
-        }
-        localStorage.setItem("yxa_fb_cfg", JSON.stringify(config));
-        toast("تم حفظ الإعدادات. ستُعاد الصفحة لتفعيلها.");
-        setTimeout(() => location.reload(), 600);
-      } catch (error) {
-        toast("إعدادات غير صالحة: " + error.message);
-      }
-    };
-
-    $("fb-clear").onclick = () => {
-      try {
-        localStorage.removeItem("yxa_fb_cfg");
-      } catch {}
-      toast("تم مسح إعدادات Firebase.");
-      setTimeout(() => location.reload(), 600);
-    };
-
+    // حالة التطبيق
     let me = null;
     let posts = [];
     let pendingDeleteId = null;
@@ -705,9 +597,9 @@
     try {
       geminiKey = localStorage.getItem("yxa_gkey") || "";
     } catch {}
-
     $("g-key").value = geminiKey;
 
+    // النوافذ
     function openModal(id) {
       $(id).hidden = false;
     }
@@ -735,6 +627,7 @@
       if (event.key === "Escape") closeModals();
     });
 
+    // نسخ النص
     async function copyText(text) {
       try {
         if (navigator.clipboard && window.isSecureContext) {
@@ -759,6 +652,7 @@
     $("b-contact").onclick = () => openModal("m-contact");
     $("copy-mail").onclick = () => copyText("ya8827860@gmail.com");
 
+    // التبويبات
     const tabs = [
       ["home", "🏠 الرئيسية"],
       ["friends", "👥 الأصدقاء"],
@@ -780,6 +674,7 @@
       $("tabs").append(button);
     });
 
+    // عرض البيانات
     function updateProfileUI() {
       if (!me) return;
       $("u-yxa").textContent = me.yxaId;
@@ -787,159 +682,6 @@
       $("a-name").value = me.name;
       $("a-yxa").value = me.yxaId;
       $("a-mail").value = me.email || "(بدون بريد)";
-    }
-
-    function createLocalProfile(email) {
-      const storageKey = "yxa_demo_user_" + email.toLowerCase();
-      let profile = null;
-      try {
-        profile = JSON.parse(localStorage.getItem(storageKey) || "null");
-      } catch {}
-
-      if (!profile) {
-        const uid = globalThis.crypto?.randomUUID
-          ? globalThis.crypto.randomUUID()
-          : Date.now() + "_" + Math.random().toString(36).slice(2);
-
-        profile = {
-          uid: "local_" + uid,
-          name: email.split("@")[0] || "مستخدم YXA",
-          yxaId: "YXA-" + Math.floor(100000 + Math.random() * 900000),
-          email
-        };
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(profile));
-        } catch {}
-      }
-      return profile;
-    }
-
-    function enterLocalSession(email) {
-      me = createLocalProfile(email);
-      try {
-        localStorage.setItem("yxa_demo_last_email", email);
-      } catch {}
-      $("auth").hidden = true;
-      $("app").hidden = false;
-      updateProfileUI();
-      renderLocalData();
-      toast("تم الدخول إلى وضع التجربة المحلي.");
-    }
-
-    function authError(text) {
-      $("auth-err").textContent = text || "";
-    }
-
-    const providers = {
-      google: () => new GoogleAuthProvider(),
-      github: () => new GithubAuthProvider(),
-      apple: () => {
-        const provider = new OAuthProvider("apple.com");
-        provider.addScope("email");
-        provider.addScope("name");
-        return provider;
-      }
-    };
-
-    document.querySelectorAll("[data-provider]").forEach(button => {
-      button.onclick = async () => {
-        authError();
-        if (!cloudMode) {
-          authError("فعّل Firebase أولاً لاستخدام تسجيل الدخول الاجتماعي.");
-          return;
-        }
-        try {
-          await signInWithPopup(auth, providers[button.dataset.provider]());
-        } catch (error) {
-          authError(errorText(error));
-        }
-      };
-    });
-
-    async function emailAuth(createAccount) {
-      authError();
-      const email = $("em").value.trim();
-      const password = $("pw").value;
-
-      if (!email || !password) {
-        authError("أدخل البريد الإلكتروني وكلمة المرور.");
-        return;
-      }
-      if (password.length < 6) {
-        authError("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
-        return;
-      }
-      if (!cloudMode) {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          authError("البريد الإلكتروني غير صالح.");
-          return;
-        }
-        enterLocalSession(email);
-        return;
-      }
-
-      try {
-        if (createAccount) {
-          await createUserWithEmailAndPassword(auth, email, password);
-        } else {
-          await signInWithEmailAndPassword(auth, email, password);
-        }
-      } catch (error) {
-        authError(errorText(error));
-      }
-    }
-
-    $("em-in").onclick = () => emailAuth(false);
-    $("em-up").onclick = () => emailAuth(true);
-    $("pw").onkeydown = event => {
-      if (event.key === "Enter") emailAuth(false);
-    };
-
-    $("b-out").onclick = async () => {
-      if (!cloudMode) {
-        me = null;
-        try {
-          localStorage.removeItem("yxa_demo_last_email");
-        } catch {}
-        closeModals();
-        $("app").hidden = true;
-        $("auth").hidden = false;
-        return;
-      }
-      try {
-        await signOut(auth);
-      } catch (error) {
-        toast(errorText(error));
-      }
-    };
-
-    async function ensureProfile(user) {
-      const profileRef = doc(db, "users", user.uid);
-      const snapshot = await getDoc(profileRef);
-      if (snapshot.exists()) {
-        return { uid: user.uid, ...snapshot.data() };
-      }
-
-      let yxaId = null;
-      for (let attempt = 0; attempt < 8 && !yxaId; attempt++) {
-        const candidate = "YXA-" + Math.floor(100000 + Math.random() * 900000);
-        const existing = await getDocs(
-          query(collection(db, "users"), where("yxaId", "==", candidate), limit(1))
-        );
-        if (existing.empty) yxaId = candidate;
-      }
-
-      if (!yxaId) {
-        throw new Error("تعذّر إنشاء رقم YXA، أعد المحاولة.");
-      }
-
-      const profile = {
-        name: user.displayName || (user.email || "مستخدم").split("@")[0],
-        yxaId,
-        created: serverTimestamp()
-      };
-      await setDoc(profileRef, profile);
-      return { uid: user.uid, ...profile };
     }
 
     function renderStories(items) {
@@ -1053,14 +795,125 @@
       }]));
     }
 
+    function createLocalProfile(email) {
+      const storageKey = "yxa_demo_user_" + email.toLowerCase();
+      let profile = null;
+      try {
+        profile = JSON.parse(localStorage.getItem(storageKey) || "null");
+      } catch {}
+
+      if (!profile) {
+        const uid = globalThis.crypto?.randomUUID
+          ? globalThis.crypto.randomUUID()
+          : Date.now() + "_" + Math.random().toString(36).slice(2);
+
+        profile = {
+          uid: "local_" + uid,
+          name: email.split("@")[0] || "مستخدم YXA",
+          yxaId: "YXA-" + Math.floor(100000 + Math.random() * 900000),
+          email
+        };
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(profile));
+        } catch {}
+      }
+      return profile;
+    }
+
+    function enterLocalSession(email) {
+      me = createLocalProfile(email);
+      try {
+        localStorage.setItem("yxa_demo_last_email", email);
+      } catch {}
+      $("auth").hidden = true;
+      $("app").hidden = false;
+      updateProfileUI();
+      renderLocalData();
+      toast("تم الدخول إلى وضع التجربة المحلي.");
+    }
+
+    function authError(text) {
+      $("auth-err").textContent = text || "";
+    }
+
+    // إعداد Firebase
+    const firebaseConfig = {
+      apiKey: "PASTE_API_KEY",
+      authDomain: "PASTE_PROJECT.firebaseapp.com",
+      projectId: "PASTE_PROJECT_ID",
+      appId: "PASTE_APP_ID"
+    };
+
+    let savedConfig = null;
+    try {
+      savedConfig = JSON.parse(localStorage.getItem("yxa_fb_cfg") || "null");
+    } catch {}
+
+    function isValidConfig(config) {
+      return Boolean(
+        config &&
+        typeof config.apiKey === "string" &&
+        config.apiKey &&
+        !config.apiKey.startsWith("PASTE") &&
+        typeof config.projectId === "string" &&
+        config.projectId &&
+        !config.projectId.startsWith("PASTE") &&
+        config.authDomain &&
+        config.appId
+      );
+    }
+
+    const activeConfig = isValidConfig(savedConfig)
+      ? savedConfig
+      : isValidConfig(firebaseConfig)
+        ? firebaseConfig
+        : null;
+
+    let cloudMode = false;
+    let auth = null;
+    let db = null;
+    let aiModel = null;
+    let fb = {};
+
+    if (location.protocol === "file:") {
+      $("file-warn").hidden = false;
+    }
+
+    $("open-setup").onclick = () => {
+      $("fb-json").value = savedConfig ? JSON.stringify(savedConfig, null, 2) : "";
+      $("setup").hidden = false;
+    };
+
+    $("fb-save").onclick = () => {
+      try {
+        const config = JSON.parse($("fb-json").value.trim());
+        if (!isValidConfig(config)) {
+          throw new Error("تحقق من apiKey وauthDomain وprojectId وappId.");
+        }
+        localStorage.setItem("yxa_fb_cfg", JSON.stringify(config));
+        toast("تم حفظ الإعدادات. ستُعاد الصفحة لتفعيلها.");
+        setTimeout(() => location.reload(), 600);
+      } catch (error) {
+        toast("إعدادات غير صالحة: " + error.message);
+      }
+    };
+
+    $("fb-clear").onclick = () => {
+      try {
+        localStorage.removeItem("yxa_fb_cfg");
+      } catch {}
+      toast("تم مسح إعدادات Firebase.");
+      setTimeout(() => location.reload(), 600);
+    };
+
     function listenToCloudData() {
       unsubscribers.forEach(unsubscribe => unsubscribe());
       unsubscribers = [];
       const onError = error => toast(errorText(error));
 
       unsubscribers.push(
-        onSnapshot(
-          query(collection(db, "posts"), orderBy("ts", "desc"), limit(50)),
+        fb.onSnapshot(
+          fb.query(fb.collection(db, "posts"), fb.orderBy("ts", "desc"), fb.limit(50)),
           snapshot => {
             posts = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
             renderPosts();
@@ -1070,8 +923,8 @@
       );
 
       unsubscribers.push(
-        onSnapshot(
-          query(collection(db, "stories"), orderBy("ts", "desc"), limit(20)),
+        fb.onSnapshot(
+          fb.query(fb.collection(db, "stories"), fb.orderBy("ts", "desc"), fb.limit(20)),
           snapshot => {
             renderStories(snapshot.docs.map(item => ({ id: item.id, ...item.data() })));
           },
@@ -1080,8 +933,8 @@
       );
 
       unsubscribers.push(
-        onSnapshot(
-          collection(db, "users", me.uid, "friends"),
+        fb.onSnapshot(
+          fb.collection(db, "users", me.uid, "friends"),
           snapshot => {
             renderFriends(snapshot.docs.map(item => ({ id: item.id, ...item.data() })));
           },
@@ -1090,32 +943,104 @@
       );
     }
 
-    if (cloudMode && auth) {
-      onAuthStateChanged(auth, async user => {
-        unsubscribers.forEach(unsubscribe => unsubscribe());
-        unsubscribers = [];
-        stopChat();
+    async function ensureProfile(user) {
+      const profileRef = fb.doc(db, "users", user.uid);
+      const snapshot = await fb.getDoc(profileRef);
+      if (snapshot.exists()) {
+        return { uid: user.uid, ...snapshot.data() };
+      }
 
-        if (!user) {
-          me = null;
-          $("app").hidden = true;
-          $("auth").hidden = false;
-          return;
-        }
+      let yxaId = null;
+      for (let attempt = 0; attempt < 8 && !yxaId; attempt++) {
+        const candidate = "YXA-" + Math.floor(100000 + Math.random() * 900000);
+        const existing = await fb.getDocs(
+          fb.query(fb.collection(db, "users"), fb.where("yxaId", "==", candidate), fb.limit(1))
+        );
+        if (existing.empty) yxaId = candidate;
+      }
 
+      if (!yxaId) {
+        throw new Error("تعذّر إنشاء رقم YXA، أعد المحاولة.");
+      }
+
+      const profile = {
+        name: user.displayName || (user.email || "مستخدم").split("@")[0],
+        yxaId,
+        created: fb.serverTimestamp()
+      };
+      await fb.setDoc(profileRef, profile);
+      return { uid: user.uid, ...profile };
+    }
+
+    async function initApp() {
+      if (activeConfig) {
         try {
-          me = await ensureProfile(user);
-          if (!me.email && user.email) me.email = user.email;
-          updateProfileUI();
-          $("auth").hidden = true;
-          $("app").hidden = false;
-          listenToCloudData();
+          const v = "10.14.1";
+          const [appMod, authMod, fsMod] = await Promise.all([
+            import(`https://www.gstatic.com/firebasejs/${v}/firebase-app.js`),
+            import(`https://www.gstatic.com/firebasejs/${v}/firebase-auth.js`),
+            import(`https://www.gstatic.com/firebasejs/${v}/firebase-firestore.js`)
+          ]);
+
+          fb = { ...authMod, ...fsMod };
+          const firebaseApp = appMod.initializeApp(activeConfig);
+          auth = authMod.getAuth(firebaseApp);
+          db = fsMod.getFirestore(firebaseApp);
+          cloudMode = true;
+          $("mode-badge").textContent = "الوضع السحابي: Firebase";
+
+          // محاولة تهيئة Firebase AI إن وجدت في الحزمة دون تعطيل باقي التطبيق
+          try {
+            const aiMod = await import(`https://www.gstatic.com/firebasejs/${v}/firebase-ai.js`);
+            if (typeof aiMod.getAI === "function" && typeof aiMod.getGenerativeModel === "function") {
+              const backend = typeof aiMod.AgentPlatformBackend === "function"
+                ? new aiMod.AgentPlatformBackend()
+                : undefined;
+              const ai = backend ? aiMod.getAI(firebaseApp, { backend }) : aiMod.getAI(firebaseApp);
+              aiModel = aiMod.getGenerativeModel(ai, { model: "gemini-2.5-flash" });
+            }
+          } catch {}
+
+          authMod.onAuthStateChanged(auth, async user => {
+            unsubscribers.forEach(unsubscribe => unsubscribe());
+            unsubscribers = [];
+            stopChat();
+
+            if (!user) {
+              me = null;
+              $("app").hidden = true;
+              $("auth").hidden = false;
+              return;
+            }
+
+            try {
+              me = await ensureProfile(user);
+              if (!me.email && user.email) me.email = user.email;
+              updateProfileUI();
+              $("auth").hidden = true;
+              $("app").hidden = false;
+              listenToCloudData();
+            } catch (error) {
+              toast(errorText(error));
+            }
+          });
+          return;
         } catch (error) {
-          toast(errorText(error));
+          $("mode-badge").textContent = "تعذّر تشغيل Firebase: " + errorText(error);
         }
+      }
+
+      $("mode-badge").textContent =
+        "وضع تجربة محلي فقط — لا توجد مصادقة أو مزامنة سحابية حقيقية.";
+      document.querySelectorAll(".provider").forEach(button => {
+        button.disabled = true;
       });
-    } else {
-      const lastEmail = localStorage.getItem("yxa_demo_last_email");
+
+      let lastEmail = null;
+      try {
+        lastEmail = localStorage.getItem("yxa_demo_last_email");
+      } catch {}
+
       if (lastEmail) {
         enterLocalSession(lastEmail);
       } else {
@@ -1124,6 +1049,89 @@
       }
     }
 
+    // أزرار الدخول
+    document.querySelectorAll("[data-provider]").forEach(button => {
+      button.onclick = async () => {
+        authError();
+        if (!cloudMode || !auth) {
+          authError("فعّل Firebase أولاً لاستخدام تسجيل الدخول الاجتماعي.");
+          return;
+        }
+        try {
+          const p = button.dataset.provider;
+          let provider;
+          if (p === "google") provider = new fb.GoogleAuthProvider();
+          else if (p === "github") provider = new fb.GithubAuthProvider();
+          else {
+            provider = new fb.OAuthProvider("apple.com");
+            provider.addScope("email");
+            provider.addScope("name");
+          }
+          await fb.signInWithPopup(auth, provider);
+        } catch (error) {
+          authError(errorText(error));
+        }
+      };
+    });
+
+    async function emailAuth(createAccount) {
+      authError();
+      const email = $("em").value.trim();
+      const password = $("pw").value;
+
+      if (!email || !password) {
+        authError("أدخل البريد الإلكتروني وكلمة المرور.");
+        return;
+      }
+      if (password.length < 6) {
+        authError("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
+        return;
+      }
+      if (!cloudMode) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          authError("البريد الإلكتروني غير صالح.");
+          return;
+        }
+        enterLocalSession(email);
+        return;
+      }
+
+      try {
+        if (createAccount) {
+          await fb.createUserWithEmailAndPassword(auth, email, password);
+        } else {
+          await fb.signInWithEmailAndPassword(auth, email, password);
+        }
+      } catch (error) {
+        authError(errorText(error));
+      }
+    }
+
+    $("em-in").onclick = () => emailAuth(false);
+    $("em-up").onclick = () => emailAuth(true);
+    $("pw").onkeydown = event => {
+      if (event.key === "Enter") emailAuth(false);
+    };
+
+    $("b-out").onclick = async () => {
+      if (!cloudMode) {
+        me = null;
+        try {
+          localStorage.removeItem("yxa_demo_last_email");
+        } catch {}
+        closeModals();
+        $("app").hidden = true;
+        $("auth").hidden = false;
+        return;
+      }
+      try {
+        await fb.signOut(auth);
+      } catch (error) {
+        toast(errorText(error));
+      }
+    };
+
+    // المنشورات
     $("post-add").onclick = async () => {
       const text = $("post-in").value.trim();
       if (!text || !me) return;
@@ -1145,12 +1153,12 @@
       }
 
       try {
-        await addDoc(collection(db, "posts"), {
+        await fb.addDoc(fb.collection(db, "posts"), {
           uid: me.uid,
           author: me.name,
           text,
           likes: [],
-          ts: serverTimestamp()
+          ts: fb.serverTimestamp()
         });
         $("post-in").value = "";
         toast("تم النشر.");
@@ -1173,8 +1181,8 @@
       }
 
       try {
-        await updateDoc(doc(db, "posts", post.id), {
-          likes: likedByMe ? arrayRemove(me.uid) : arrayUnion(me.uid)
+        await fb.updateDoc(fb.doc(db, "posts", post.id), {
+          likes: likedByMe ? fb.arrayRemove(me.uid) : fb.arrayUnion(me.uid)
         });
       } catch (error) {
         toast(errorText(error));
@@ -1196,13 +1204,14 @@
       }
 
       try {
-        await deleteDoc(doc(db, "posts", id));
+        await fb.deleteDoc(fb.doc(db, "posts", id));
         toast("تم حذف المنشور.");
       } catch (error) {
         toast(errorText(error));
       }
     };
 
+    // الستوريات
     $("st-add").onclick = () => {
       $("st-in").value = "";
       openModal("m-add-story");
@@ -1223,11 +1232,11 @@
       }
 
       try {
-        await addDoc(collection(db, "stories"), {
+        await fb.addDoc(fb.collection(db, "stories"), {
           uid: me.uid,
           author: me.name,
           text,
-          ts: serverTimestamp()
+          ts: fb.serverTimestamp()
         });
         closeModals();
         toast("تم نشر الستوري.");
@@ -1236,6 +1245,7 @@
       }
     };
 
+    // الأصدقاء والمحادثات
     $("f-add").onclick = async () => {
       const code = $("f-in").value.trim().toUpperCase();
       if (!code || !me) return;
@@ -1255,8 +1265,8 @@
       }
 
       try {
-        const snap = await getDocs(
-          query(collection(db, "users"), where("yxaId", "==", code), limit(1))
+        const snap = await fb.getDocs(
+          fb.query(fb.collection(db, "users"), fb.where("yxaId", "==", code), fb.limit(1))
         );
         if (snap.empty) {
           toast("لم يتم العثور على مستخدم بهذا الرقم.");
@@ -1267,7 +1277,7 @@
           toast("لا يمكنك إضافة نفسك.");
           return;
         }
-        await setDoc(doc(db, "users", me.uid, "friends", target.id), {
+        await fb.setDoc(fb.doc(db, "users", me.uid, "friends", target.id), {
           name: target.data().name || "عضو",
           yxaId: target.data().yxaId || code
         });
@@ -1307,8 +1317,8 @@
       }
 
       const roomId = chatRoomId(me.uid, friend.id);
-      chatUnsubscribe = onSnapshot(
-        query(collection(db, "chats", roomId, "messages"), orderBy("ts", "asc"), limit(100)),
+      chatUnsubscribe = fb.onSnapshot(
+        fb.query(fb.collection(db, "chats", roomId, "messages"), fb.orderBy("ts", "asc"), fb.limit(100)),
         snap => {
           renderChatMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         },
@@ -1331,10 +1341,10 @@
 
       try {
         const roomId = chatRoomId(me.uid, chatFriend.id);
-        await addDoc(collection(db, "chats", roomId, "messages"), {
+        await fb.addDoc(fb.collection(db, "chats", roomId, "messages"), {
           senderId: me.uid,
           text,
-          ts: serverTimestamp()
+          ts: fb.serverTimestamp()
         });
         $("c-in").value = "";
       } catch (error) {
@@ -1342,6 +1352,7 @@
       }
     };
 
+    // الملف الشخصي
     $("a-save").onclick = async () => {
       const nextName = $("a-name").value.trim();
       if (!nextName || !me) return;
@@ -1357,7 +1368,7 @@
       }
 
       try {
-        await updateDoc(doc(db, "users", me.uid), { name: nextName });
+        await fb.updateDoc(fb.doc(db, "users", me.uid), { name: nextName });
         toast("تم تحديث الاسم.");
       } catch (error) {
         toast(errorText(error));
@@ -1368,6 +1379,7 @@
       if (me?.yxaId) copyText(me.yxaId);
     };
 
+    // الذكاء الاصطناعي
     $("g-save").onclick = () => {
       geminiKey = $("g-key").value.trim();
       try {
@@ -1386,7 +1398,7 @@
       }
 
       if (!geminiKey) {
-        toast("أدخل مفتاح Gemini API أو فعّل Firebase لاستخدام AgentPlatformBackend.");
+        toast("أدخل مفتاح Gemini API أولاً.");
         return null;
       }
 
@@ -1431,6 +1443,8 @@
         toast(errorText(error));
       }
     };
+
+    initApp();
   </script>
 </body>
 </html>
