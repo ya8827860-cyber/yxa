@@ -1,1499 +1,447 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#000000">
-  <title>تواصل | YXA</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: "Cairo", system-ui, sans-serif;
-    }
-
-    :root {
-      color-scheme: light;
-      --bg: #f5f5f5;
-      --fg: #0a0a0a;
-      --card: #fff;
-      --border: #d4d4d4;
-      --subtle: #ececec;
-      --muted: #737373;
-      --inverse: #000;
-      --inverse-fg: #fff;
-    }
-
-    .dark {
-      color-scheme: dark;
-      --bg: #000;
-      --fg: #fafafa;
-      --card: #0a0a0a;
-      --border: #262626;
-      --subtle: #171717;
-      --muted: #a3a3a3;
-      --inverse: #fff;
-      --inverse-fg: #000;
-    }
-
-    [hidden] { display: none !important; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--fg);
-      font-size: 14px;
-    }
-
-    button, input, textarea { font: inherit; }
-
-    .screen, .modal {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      overflow: auto;
-    }
-
-    .screen { z-index: 40; background: var(--bg); }
-    .modal { z-index: 50; background: rgb(0 0 0 / 85%); }
-
-    .card {
-      width: 100%;
-      padding: 1.1rem;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 1.25rem;
-    }
-
-    .stack > * + * { margin-top: .8rem; }
-
-    .row {
-      display: flex;
-      align-items: center;
-      gap: .55rem;
-    }
-
-    .sp { justify-content: space-between; }
-
-    .inp {
-      width: 100%;
-      min-width: 0;
-      padding: .7rem .9rem;
-      color: var(--fg);
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: .85rem;
-      font-size: .85rem;
-      outline: none;
-    }
-
-    .inp:focus {
-      border-color: var(--fg);
-      box-shadow: 0 0 0 2px rgb(128 128 128 / 25%);
-    }
-
-    .inp[readonly] {
-      background: var(--subtle);
-      font-weight: 700;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: .62rem .9rem;
-      color: var(--fg);
-      background: var(--subtle);
-      border: 1px solid var(--border);
-      border-radius: .85rem;
-      font-size: .8rem;
-      font-weight: 700;
-      text-decoration: none;
-      cursor: pointer;
-      transition: transform .14s, opacity .14s;
-    }
-
-    .btn:hover { opacity: .82; }
-    .btn:active { transform: scale(.97); }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-
-    .primary {
-      color: var(--inverse-fg);
-      background: var(--inverse);
-      border-color: var(--inverse);
-      font-weight: 900;
-    }
-
-    .muted { color: var(--muted); }
-    .small { font-size: .72rem; }
-    .mono { font-family: monospace; }
-    .bold { font-weight: 900; }
-
-    .wrap {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 1rem;
-    }
-
-    .tabs {
-      display: flex;
-      gap: .4rem;
-      overflow-x: auto;
-      padding: .6rem 0;
-    }
-
-    .tabs .btn { white-space: nowrap; }
-    .tab { display: none; }
-    .tab.on { display: block; }
-    .tab > * + * { margin-top: 1rem; }
-
-    .feed {
-      display: flex;
-      flex-direction: column;
-      gap: .5rem;
-      overflow-y: auto;
-    }
-
-    .bubble {
-      max-width: 85%;
-      padding: .7rem;
-      border-radius: 1rem;
-      font-size: .82rem;
-      line-height: 1.7;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-
-    .bubble.me {
-      align-self: flex-start;
-      color: var(--inverse-fg);
-      background: var(--inverse);
-    }
-
-    .bubble.other {
-      align-self: flex-end;
-      background: var(--subtle);
-    }
-
-    .item {
-      padding: .75rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: .9rem;
-    }
-
-    .error {
-      min-height: 1rem;
-      color: #e11d48;
-      font-size: .75rem;
-      font-weight: 700;
-    }
-
-    #toasts {
-      position: fixed;
-      top: 1rem;
-      left: 1rem;
-      z-index: 99;
-      display: flex;
-      flex-direction: column;
-      gap: .5rem;
-      max-width: min(90vw, 360px);
-    }
-
-    .toast {
-      padding: .7rem 1rem;
-      color: var(--inverse-fg);
-      background: var(--inverse);
-      border-radius: .9rem;
-      font-size: .8rem;
-      font-weight: 700;
-      overflow-wrap: anywhere;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 3.2rem;
-      height: 3.2rem;
-      color: var(--inverse-fg);
-      background: var(--inverse);
-      border-radius: 1rem;
-      font-weight: 900;
-    }
-
-    .post-text {
-      line-height: 1.8;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-
-    .story {
-      flex-shrink: 0;
-      max-width: 160px;
-      text-align: right;
-      white-space: normal;
-    }
-
-    @media (max-width: 480px) {
-      .wrap { padding: .65rem; }
-      .card { padding: .9rem; }
-      .profile-actions { flex-wrap: wrap; }
-      .profile-actions .btn { flex: 1; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        transition: none !important;
-        scroll-behavior: auto !important;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000000">
+<title>تواصل | YXA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;font-family:"Cairo",system-ui,sans-serif}
+:root{color-scheme:light;--bg:#f5f5f5;--fg:#0a0a0a;--card:#fff;--border:#d4d4d4;--subtle:#ececec;--muted:#737373;--inv:#000;--invfg:#fff}
+.dark{color-scheme:dark;--bg:#000;--fg:#fafafa;--card:#0a0a0a;--border:#262626;--subtle:#171717;--muted:#a3a3a3;--inv:#fff;--invfg:#000}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);font-size:14px}
+button,input,textarea{font:inherit}
+.screen,.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:1rem;overflow:auto}
+.screen{z-index:40;background:var(--bg)}.modal{z-index:50;background:rgb(0 0 0/85%)}
+.card{width:100%;padding:1.1rem;background:var(--card);border:1px solid var(--border);border-radius:1.25rem}
+.stack>*+*{margin-top:.8rem}
+.row{display:flex;align-items:center;gap:.55rem}.sp{justify-content:space-between}
+.inp{width:100%;min-width:0;padding:.7rem .9rem;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:.85rem;font-size:.85rem;outline:none}
+.inp:focus{border-color:var(--fg)}.inp[readonly]{background:var(--subtle);font-weight:700}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:.62rem .9rem;color:var(--fg);background:var(--subtle);border:1px solid var(--border);border-radius:.85rem;font-size:.8rem;font-weight:700;text-decoration:none;cursor:pointer;transition:transform .14s,opacity .14s}
+.btn:hover{opacity:.82}.btn:active{transform:scale(.97)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,.inp:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.primary{color:var(--invfg);background:var(--inv);border-color:var(--inv);font-weight:900}
+.muted{color:var(--muted)}.small{font-size:.72rem}.mono{font-family:monospace}.bold{font-weight:900}
+.wrap{max-width:720px;margin:0 auto;padding:1rem}
+.tabs{display:flex;gap:.4rem;overflow-x:auto;padding:.6rem 0}.tabs .btn{white-space:nowrap}
+.tab{display:none}.tab.on{display:block}.tab>*+*{margin-top:1rem}
+.feed{display:flex;flex-direction:column;gap:.5rem;overflow-y:auto}
+.bubble{max-width:85%;padding:.7rem;border-radius:1rem;font-size:.82rem;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.bubble.me{align-self:flex-start;color:var(--invfg);background:var(--inv)}.bubble.other{align-self:flex-end;background:var(--subtle)}
+.item{padding:.75rem;background:var(--bg);border:1px solid var(--border);border-radius:.9rem}
+.error{min-height:1rem;color:#e11d48;font-size:.75rem;font-weight:700}
+#toasts{position:fixed;top:1rem;left:1rem;z-index:99;display:flex;flex-direction:column;gap:.5rem;max-width:min(90vw,360px)}
+.toast{padding:.7rem 1rem;color:var(--invfg);background:var(--inv);border-radius:.9rem;font-size:.8rem;font-weight:700;overflow-wrap:anywhere}
+.logo{display:flex;align-items:center;justify-content:center;width:3.2rem;height:3.2rem;color:var(--invfg);background:var(--inv);border-radius:1rem;font-weight:900}
+.post-text{line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+.story{flex-shrink:0;max-width:160px;text-align:right;white-space:normal;flex-direction:column;align-items:flex-start}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.75rem}
+@media(max-width:480px){.wrap{padding:.65rem}.card{padding:.9rem}.pa{flex-wrap:wrap}.pa .btn{flex:1}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
 </head>
-
 <body>
-  <div id="toasts" aria-live="polite" aria-atomic="true"></div>
+<div id="toasts" aria-live="polite"></div>
 
-  <!-- إعداد Firebase -->
-  <div id="setup" class="modal" hidden role="dialog" aria-modal="true">
-    <div class="card stack" style="max-width:520px">
-      <div class="row sp">
-        <h2 class="bold">⚙️ إعدادات Firebase</h2>
-        <button class="btn" data-close aria-label="إغلاق">✕</button>
-      </div>
-      <p class="small muted" style="line-height:1.9">
-        أدخل إعدادات مشروع Firebase بصيغة JSON لتفعيل الحسابات والبيانات السحابية.
-        وضع التجربة المحلي لا يوفر مصادقة حقيقية.
-      </p>
-      <textarea id="fb-json" class="inp mono" rows="6" dir="ltr"
-        style="text-align:left"
-        placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea>
-      <div class="row">
-        <button id="fb-save" class="btn primary" style="flex:1">حفظ وتفعيل</button>
-        <button id="fb-clear" class="btn">مسح الإعدادات</button>
+<div id="auth" class="screen">
+  <div class="card stack" style="max-width:420px">
+    <div class="stack" style="text-align:center">
+      <div class="logo" style="margin:auto">YXA</div>
+      <h2 class="bold" style="margin-bottom:0">تواصل | YXA</h2>
+      <p id="boot" class="small muted">جارٍ الاتصال بالخادم…</p>
+    </div>
+    <button class="btn primary provider" data-p="google" style="width:100%" disabled>الدخول بحساب Google</button>
+    <button class="btn provider" data-p="github" style="width:100%" disabled>الدخول بحساب GitHub</button>
+    <p class="small muted" style="text-align:center">أو بالبريد الإلكتروني</p>
+    <input id="em" type="email" class="inp" placeholder="البريد الإلكتروني" autocomplete="email" dir="ltr">
+    <input id="pw" type="password" class="inp" placeholder="كلمة المرور (6 أحرف على الأقل)" autocomplete="current-password" dir="ltr">
+    <div class="row">
+      <button id="em-in" class="btn primary" style="flex:1" disabled>دخول</button>
+      <button id="em-up" class="btn" style="flex:1" disabled>إنشاء حساب</button>
+    </div>
+    <button id="reset" class="link" style="width:100%">نسيت كلمة المرور؟</button>
+    <p id="auth-err" class="error" role="alert"></p>
+  </div>
+</div>
+
+<div id="app" hidden>
+<main class="wrap">
+  <header class="row sp card" style="padding:.75rem 1rem">
+    <div class="row">
+      <div class="logo" style="width:2.4rem;height:2.4rem;font-size:.75rem">YXA</div>
+      <div><div class="bold">تواصل <span id="u-yxa" class="mono small muted"></span></div><div id="u-name" class="small muted"></div></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="b-theme" aria-label="تغيير المظهر">🌓</button>
+      <button class="btn" id="b-out" aria-label="تسجيل الخروج">🚪</button>
+    </div>
+  </header>
+  <nav id="tabs" class="tabs" aria-label="التنقل"></nav>
+
+  <section id="t-home" class="tab on">
+    <div class="card stack">
+      <div class="row sp"><b>الستوريات (تختفي بعد 24 ساعة)</b><button class="btn primary" id="st-add">+ ستوري</button></div>
+      <div id="stories" class="row" style="overflow-x:auto"></div>
+    </div>
+    <div class="card stack">
+      <textarea id="post-in" class="inp" rows="2" maxlength="1000" placeholder="ماذا يدور في ذهنك؟" style="resize:vertical"></textarea>
+      <div class="row" style="justify-content:flex-end">
+        <button class="btn" id="post-ai">✨ صياغة بالذكاء</button>
+        <button class="btn primary" id="post-add">نشر</button>
       </div>
     </div>
-  </div>
+    <div id="posts" class="stack"></div>
+  </section>
 
-  <!-- تسجيل الدخول -->
-  <div id="auth" class="screen">
-    <div class="card stack" style="max-width:420px">
-      <div class="stack" style="text-align:center">
-        <div class="logo" style="margin:auto">YXA</div>
-        <h2 class="bold">تواصل | YXA</h2>
-        <p id="mode-badge" class="small muted">جاري التحميل...</p>
-      </div>
-
-      <p id="file-warn" class="error" hidden>
-        ⚠️ الدخول الاجتماعي يحتاج إلى رابط http(s) أو localhost.
-      </p>
-
-      <button class="btn primary provider" data-provider="google" style="width:100%">
-        الدخول بحساب Google
-      </button>
-      <button class="btn provider" data-provider="apple" style="width:100%">
-        الدخول بحساب Apple
-      </button>
-      <button class="btn provider" data-provider="github" style="width:100%">
-        الدخول بحساب GitHub
-      </button>
-
-      <p class="small muted" style="text-align:center">أو بالبريد الإلكتروني</p>
-      <input id="em" type="email" class="inp" placeholder="البريد الإلكتروني" autocomplete="email">
-      <input id="pw" type="password" class="inp"
-        placeholder="كلمة المرور (6 أحرف على الأقل)" autocomplete="current-password">
-
-      <div class="row">
-        <button id="em-in" class="btn primary" style="flex:1">دخول</button>
-        <button id="em-up" class="btn" style="flex:1">إنشاء حساب</button>
-      </div>
-
-      <button id="open-setup" class="btn small" style="width:100%">
-        ⚙️ إعداد مشروع Firebase
-      </button>
-      <p id="auth-err" class="error" role="alert"></p>
+  <section id="t-friends" class="tab">
+    <div class="card stack">
+      <b>إضافة صديق برقم YXA</b>
+      <div class="row"><input id="f-in" class="inp mono" placeholder="YXA-123456" dir="ltr"><button class="btn primary" id="f-add">إضافة</button></div>
     </div>
-  </div>
+    <div class="card stack"><b>الأصدقاء</b><div id="f-list" class="stack"></div></div>
+  </section>
 
-  <!-- التطبيق -->
-  <div id="app" hidden>
-    <main class="wrap">
-      <header class="row sp card" style="padding:.75rem 1rem">
-        <div class="row">
-          <div class="logo" style="width:2.4rem;height:2.4rem;font-size:.75rem">YXA</div>
-          <div>
-            <div class="bold">تواصل <span id="u-yxa" class="mono small muted"></span></div>
-            <div id="u-name" class="small muted"></div>
-          </div>
-        </div>
-        <div class="row">
-          <button class="btn" id="b-theme" title="تغيير المظهر" aria-label="تغيير المظهر">🌓</button>
-          <button class="btn" id="b-out" title="تسجيل الخروج" aria-label="تسجيل الخروج">🚪</button>
-        </div>
-      </header>
-
-      <nav id="tabs" class="tabs" aria-label="التنقل"></nav>
-
-      <section id="t-home" class="tab on">
-        <div class="card stack">
-          <div class="row sp">
-            <b>الستوريات</b>
-            <button class="btn primary" id="st-add">+ ستوري</button>
-          </div>
-          <div id="stories" class="row" style="overflow-x:auto"></div>
-        </div>
-
-        <div class="card stack">
-          <textarea id="post-in" class="inp" rows="2" maxlength="1000"
-            placeholder="ماذا يدور في ذهنك؟" style="resize:vertical"></textarea>
-          <div class="row" style="justify-content:flex-end">
-            <button class="btn" id="post-ai">✨ صياغة بالذكاء</button>
-            <button class="btn primary" id="post-add">نشر</button>
-          </div>
-        </div>
-
-        <div id="posts" class="stack"></div>
-      </section>
-
-      <section id="t-friends" class="tab">
-        <div class="card stack">
-          <b>إضافة صديق برقم YXA</b>
-          <div class="row">
-            <input id="f-in" class="inp mono" placeholder="YXA-123456" dir="ltr">
-            <button class="btn primary" id="f-add">إضافة</button>
-          </div>
-        </div>
-        <div class="card stack">
-          <b>الأصدقاء</b>
-          <div id="f-list" class="stack"></div>
-        </div>
-      </section>
-
-      <section id="t-ai" class="tab">
-        <div class="card stack">
-          <b>🧠 الذكاء الاصطناعي</b>
-          <p id="ai-mode-note" class="small muted">
-            أدخل مفتاح Gemini API لاستخدام الذكاء الاصطناعي، أو فعّل Firebase AI.
-          </p>
-          <div class="row" id="g-key-row">
-            <input id="g-key" type="password" class="inp mono"
-              placeholder="مفتاح Gemini API" autocomplete="off">
-            <button class="btn primary" id="g-save">حفظ</button>
-          </div>
-        </div>
-        <div class="card stack">
-          <div id="ai-feed" class="feed" aria-live="polite"
-            style="min-height:220px;max-height:380px"></div>
-          <div class="row">
-            <input id="ai-in" class="inp" placeholder="اكتب سؤالك...">
-            <button class="btn primary" id="ai-send">إرسال</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="t-me" class="tab">
-        <div class="card stack">
-          <b>الملف الشخصي</b>
-          <div>
-            <label class="small muted" for="a-name">الاسم</label>
-            <input id="a-name" class="inp" maxlength="60">
-          </div>
-          <div>
-            <label class="small muted" for="a-yxa">رقم YXA</label>
-            <input id="a-yxa" class="inp mono" readonly>
-          </div>
-          <div>
-            <label class="small muted" for="a-mail">البريد</label>
-            <input id="a-mail" class="inp" readonly>
-          </div>
-          <div class="row profile-actions">
-            <button class="btn primary" id="a-save">حفظ</button>
-            <button class="btn" id="a-copy">نسخ رقم YXA</button>
-            <button class="btn" id="b-contact">📞 التواصل</button>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- عرض ستوري -->
-  <div id="m-story" class="modal" hidden role="dialog" aria-modal="true">
-    <div class="card stack" style="max-width:380px">
-      <div class="row sp">
-        <b id="s-by"></b>
-        <button class="btn" data-close aria-label="إغلاق">✕</button>
-      </div>
-      <p id="s-tx" style="padding:2rem 0;text-align:center;font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere"></p>
+  <section id="t-ai" class="tab">
+    <div class="card stack">
+      <b>🧠 الذكاء الاصطناعي</b>
+      <p id="ai-note" class="small muted">يعمل عبر Firebase AI Logic (Gemini).</p>
+      <div id="ai-feed" class="feed" aria-live="polite" style="min-height:220px;max-height:380px"></div>
+      <div class="row"><input id="ai-in" class="inp" placeholder="اكتب سؤالك…"><button class="btn primary" id="ai-send">إرسال</button></div>
     </div>
-  </div>
+  </section>
 
-  <!-- إضافة ستوري -->
-  <div id="m-add-story" class="modal" hidden role="dialog" aria-modal="true">
-    <div class="card stack" style="max-width:400px">
-      <div class="row sp">
-        <b>+ إضافة ستوري جديد</b>
-        <button class="btn" data-close aria-label="إغلاق">✕</button>
-      </div>
-      <textarea id="st-in" class="inp" rows="3" maxlength="300"
-        placeholder="اكتب نص الستوري هنا..."></textarea>
-      <button id="st-save" class="btn primary" style="width:100%">نشر الستوري</button>
-    </div>
-  </div>
-
-  <!-- تأكيد الحذف -->
-  <div id="m-del" class="modal" hidden role="dialog" aria-modal="true">
-    <div class="card stack" style="max-width:340px;text-align:center">
-      <b>هل تريد حذف هذا المنشور؟</b>
-      <div class="row">
-        <button id="del-yes" class="btn primary" style="flex:1">نعم، احذف</button>
-        <button class="btn" data-close style="flex:1">إلغاء</button>
+  <section id="t-me" class="tab">
+    <div class="card stack">
+      <b>الملف الشخصي</b>
+      <div><label class="small muted" for="a-name">الاسم</label><input id="a-name" class="inp" maxlength="60"></div>
+      <div><label class="small muted" for="a-yxa">رقم YXA</label><input id="a-yxa" class="inp mono" readonly></div>
+      <div><label class="small muted" for="a-mail">البريد</label><input id="a-mail" class="inp" readonly></div>
+      <div class="row pa">
+        <button class="btn primary" id="a-save">حفظ</button>
+        <button class="btn" id="a-copy">نسخ رقم YXA</button>
+        <button class="btn" id="b-contact">📞 التواصل</button>
       </div>
     </div>
-  </div>
+  </section>
+</main>
+</div>
 
-  <!-- التواصل -->
-  <div id="m-contact" class="modal" hidden role="dialog" aria-modal="true">
-    <div class="card stack" style="max-width:400px">
-      <div class="row sp">
-        <b>📞 التواصل المباشر</b>
-        <button class="btn" data-close aria-label="إغلاق">✕</button>
-      </div>
-      <div class="item row sp">
-        <div>
-          <div class="small muted">واتساب مباشر</div>
-          <div class="bold mono" dir="ltr">0563068840</div>
-        </div>
-        <a href="https://wa.me/966563068840" target="_blank"
-          rel="noopener noreferrer" class="btn primary">مراسلة</a>
-      </div>
-      <div class="item row sp">
-        <div>
-          <div class="small muted">البريد الإلكتروني</div>
-          <div class="bold mono" style="font-size:.75rem">ya8827860@gmail.com</div>
-        </div>
-        <button id="copy-mail" class="btn">نسخ</button>
-      </div>
+<div id="m-story" class="modal" hidden role="dialog" aria-modal="true">
+  <div class="card stack" style="max-width:380px">
+    <div class="row sp"><b id="s-by"></b><button class="btn" data-close aria-label="إغلاق">✕</button></div>
+    <p id="s-tx" style="padding:2rem 0;text-align:center;font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere"></p>
+  </div>
+</div>
+
+<div id="m-add-story" class="modal" hidden role="dialog" aria-modal="true">
+  <div class="card stack" style="max-width:400px">
+    <div class="row sp"><b>+ إضافة ستوري</b><button class="btn" data-close aria-label="إغلاق">✕</button></div>
+    <textarea id="st-in" class="inp" rows="3" maxlength="300" placeholder="اكتب نص الستوري…"></textarea>
+    <button id="st-save" class="btn primary" style="width:100%">نشر الستوري</button>
+  </div>
+</div>
+
+<div id="m-del" class="modal" hidden role="dialog" aria-modal="true">
+  <div class="card stack" style="max-width:340px;text-align:center">
+    <b>هل تريد حذف هذا المنشور؟</b>
+    <div class="row"><button id="del-yes" class="btn primary" style="flex:1">نعم، احذف</button><button class="btn" data-close style="flex:1">إلغاء</button></div>
+  </div>
+</div>
+
+<div id="m-contact" class="modal" hidden role="dialog" aria-modal="true">
+  <div class="card stack" style="max-width:400px">
+    <div class="row sp"><b>📞 التواصل المباشر</b><button class="btn" data-close aria-label="إغلاق">✕</button></div>
+    <div class="item row sp">
+      <div><div class="small muted">واتساب مباشر</div><div class="bold mono" dir="ltr">0563068840</div></div>
+      <a href="https://wa.me/966563068840" target="_blank" rel="noopener noreferrer" class="btn primary">مراسلة</a>
+    </div>
+    <div class="item row sp">
+      <div><div class="small muted">البريد الإلكتروني</div><div class="bold mono" style="font-size:.75rem">ya8827860@gmail.com</div></div>
+      <button id="copy-mail" class="btn">نسخ</button>
     </div>
   </div>
+</div>
 
-  <!-- المحادثة -->
-  <div id="m-chat" class="modal" hidden role="dialog" aria-modal="true">
-    <div class="card stack" style="max-width:520px">
-      <div class="row sp">
-        <div>
-          <b id="c-name"></b>
-          <div id="c-id" class="small mono muted"></div>
-        </div>
-        <button class="btn" data-close aria-label="إغلاق">✕</button>
-      </div>
-      <div id="c-feed" class="feed" style="height:16rem"></div>
-      <div class="row">
-        <input id="c-in" class="inp" maxlength="1000" placeholder="اكتب رسالتك...">
-        <button class="btn primary" id="c-send">إرسال</button>
-      </div>
-    </div>
+<div id="m-chat" class="modal" hidden role="dialog" aria-modal="true">
+  <div class="card stack" style="max-width:520px">
+    <div class="row sp"><div><b id="c-name"></b><div id="c-id" class="small mono muted"></div></div><button class="btn" data-close aria-label="إغلاق">✕</button></div>
+    <div id="c-feed" class="feed" style="height:16rem"></div>
+    <div class="row"><input id="c-in" class="inp" maxlength="1000" placeholder="اكتب رسالتك…"><button class="btn primary" id="c-send">إرسال</button></div>
   </div>
+</div>
 
-  <script type="module">
-    const $ = id => document.getElementById(id);
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInWithPopup,GoogleAuthProvider,GithubAuthProvider,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getFirestore,collection,doc,getDoc,setDoc,addDoc,updateDoc,deleteDoc,query,orderBy,limit,where,onSnapshot,serverTimestamp,arrayUnion,arrayRemove,runTransaction,Timestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import {getAI,getGenerativeModel,GoogleAIBackend} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-ai.js";
 
-    function el(tag, className = "", text = null) {
-      const node = document.createElement(tag);
-      if (className) node.className = className;
-      if (text !== null) node.textContent = String(text);
-      return node;
-    }
+const app = initializeApp({
+  apiKey:"AIzaSyDfDU6HT0mtAbiLlcuBXxrysTmHNI-rFEo",
+  authDomain:"yxa1-9833a.firebaseapp.com",
+  projectId:"yxa1-9833a",
+  storageBucket:"yxa1-9833a.firebasestorage.app",
+  messagingSenderId:"822764592315",
+  appId:"1:822764592315:web:12c11fc8ec855405cc1d9e",
+  measurementId:"G-HJLW4BRQC5"
+});
+const auth = getAuth(app), db = getFirestore(app);
+const model = getGenerativeModel(getAI(app,{backend:new GoogleAIBackend()}),{
+  model:"gemini-2.5-flash",
+  systemInstruction:"أنت مساعد ذكي داخل تطبيق تواصل YXA. أجب بالعربية بإيجاز ووضوح."
+});
+let aiChat = model.startChat();
 
-    function toast(text) {
-      const node = el("div", "toast", text);
-      $("toasts").append(node);
-      setTimeout(() => node.remove(), 3500);
-    }
+const $ = id => document.getElementById(id);
+const el = (tag,cls="",text=null)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==null)n.textContent=String(text);return n};
+const toast = t=>{const n=el("div","toast",t);$("toasts").append(n);setTimeout(()=>n.remove(),3500)};
+const errs = {
+  "auth/unauthorized-domain":"هذا النطاق غير مضاف في Authentication ← Settings ← Authorized domains.",
+  "auth/popup-closed-by-user":"أُغلقت نافذة الدخول.","auth/cancelled-popup-request":"أُلغيت نافذة الدخول السابقة.",
+  "auth/popup-blocked":"المتصفح حظر النافذة المنبثقة؛ اسمح بها وأعد المحاولة.",
+  "auth/operation-not-allowed":"طريقة الدخول غير مفعّلة في Firebase.",
+  "auth/invalid-credential":"البريد أو كلمة المرور غير صحيحة.","auth/email-already-in-use":"البريد مستخدم مسبقاً.",
+  "auth/weak-password":"كلمة المرور ضعيفة (6 أحرف على الأقل).","auth/invalid-email":"البريد الإلكتروني غير صالح.",
+  "auth/network-request-failed":"تعذّر الاتصال بالإنترنت.","auth/too-many-requests":"محاولات كثيرة؛ انتظر قليلاً.",
+  "auth/account-exists-with-different-credential":"هذا البريد مسجّل بطريقة دخول أخرى.",
+  "permission-denied":"لا توجد صلاحية؛ راجع قواعد Firestore."
+};
+const errText = e => errs[e?.code] || e?.message || String(e);
+const fmt = ts => { try { return ts?.toDate ? ts.toDate().toLocaleString("ar-SA",{dateStyle:"medium",timeStyle:"short"}) : "الآن"; } catch { return "الآن"; } };
+const read = d => ({id:d.id,...d.data({serverTimestamps:"estimate"})});
 
-    function formatTime(timestamp) {
-      try {
-        return timestamp?.toDate
-          ? timestamp.toDate().toLocaleString("ar-SA", {
-              dateStyle: "medium",
-              timeStyle: "short"
-            })
-          : "الآن";
-      } catch {
-        return "الآن";
-      }
-    }
+// المظهر
+const setTheme = t=>{document.documentElement.classList.toggle("dark",t==="dark");try{localStorage.setItem("yxa_theme",t)}catch{}};
+try{setTheme(localStorage.getItem("yxa_theme")||"dark")}catch{setTheme("dark")}
+$("b-theme").onclick = ()=>setTheme(document.documentElement.classList.contains("dark")?"light":"dark");
 
-    const errorMessages = {
-      "auth/unauthorized-domain": "هذا النطاق غير مضاف إلى النطاقات المصرح بها في Firebase.",
-      "auth/operation-not-supported-in-this-environment": "شغّل الصفحة من رابط http(s) أو localhost.",
-      "auth/popup-closed-by-user": "أُغلقت نافذة الدخول.",
-      "auth/cancelled-popup-request": "أُلغيت نافذة الدخول السابقة.",
-      "auth/popup-blocked": "المتصفح حظر النافذة المنبثقة.",
-      "auth/operation-not-allowed": "طريقة الدخول غير مفعّلة في Firebase.",
-      "auth/invalid-credential": "بيانات الدخول غير صحيحة.",
-      "auth/email-already-in-use": "البريد مستخدم مسبقاً.",
-      "auth/weak-password": "كلمة المرور ضعيفة (6 أحرف على الأقل).",
-      "auth/invalid-email": "البريد الإلكتروني غير صالح.",
-      "auth/network-request-failed": "تعذّر الاتصال بالإنترنت.",
-      "auth/too-many-requests": "تم تجاوز حد المحاولات مؤقتاً؛ انتظر قليلاً ثم أعد المحاولة.",
-      "permission-denied": "لا توجد صلاحية؛ راجع قواعد Firestore."
-    };
+// النوافذ
+let chatUnsub=null, chatFriend=null, pendingDel=null;
+const openModal = id=>{$(id).hidden=false};
+const closeModals = ()=>{document.querySelectorAll(".modal").forEach(m=>m.hidden=true);chatUnsub?.();chatUnsub=null;chatFriend=null};
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModals);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModals()});
+const copy = async t=>{try{await navigator.clipboard.writeText(t);toast("تم النسخ: "+t)}catch{toast("انسخ يدوياً: "+t)}};
+$("b-contact").onclick = ()=>openModal("m-contact");
+$("copy-mail").onclick = ()=>copy("ya8827860@gmail.com");
 
-    const errorText = error => errorMessages[error?.code] || error?.message || String(error);
+// التبويبات
+[["home","🏠 الرئيسية"],["friends","👥 الأصدقاء"],["ai","🧠 الذكاء"],["me","👤 حسابي"]].forEach(([id,label],i)=>{
+  const b = el("button","btn"+(i?"":" primary"),label); b.type="button";
+  b.onclick = ()=>{
+    document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("on",s.id==="t-"+id));
+    $("tabs").querySelectorAll(".btn").forEach(x=>x.classList.toggle("primary",x===b));
+  };
+  $("tabs").append(b);
+});
 
-    const LocalStore = {
-      get(key, fallback) {
-        try {
-          return JSON.parse(localStorage.getItem("yxa_db_" + key)) ?? fallback;
-        } catch {
-          return fallback;
-        }
-      },
-      set(key, value) {
-        try {
-          localStorage.setItem("yxa_db_" + key, JSON.stringify(value));
-          return true;
-        } catch {
-          toast("تعذّر الحفظ في هذا المتصفح.");
-          return false;
-        }
-      }
-    };
+// الحالة
+let me=null, user=null, posts=[], unsubs=[];
 
-    function setTheme(theme) {
-      document.documentElement.classList.toggle("dark", theme === "dark");
-      try {
-        localStorage.setItem("yxa_theme", theme);
-      } catch {}
-    }
+function paintProfile(){
+  $("u-yxa").textContent=me.yxaId; $("u-name").textContent=me.name;
+  $("a-name").value=me.name; $("a-yxa").value=me.yxaId; $("a-mail").value=user.email||"(بدون بريد)";
+}
 
-    try {
-      setTheme(localStorage.getItem("yxa_theme") || "dark");
-    } catch {
-      setTheme("dark");
-    }
-
-    $("b-theme").onclick = () => {
-      setTheme(document.documentElement.classList.contains("dark") ? "light" : "dark");
-    };
-
-    let me = null;
-    let posts = [];
-    let pendingDeleteId = null;
-    let chatFriend = null;
-    let chatUnsubscribe = null;
-    let unsubscribers = [];
-    let geminiKey = "";
-    let authBusy = false;
-
-    try {
-      geminiKey = localStorage.getItem("yxa_gkey") || "";
-    } catch {}
-    $("g-key").value = geminiKey;
-
-    function setAuthButtonsDisabled(disabled) {
-      authBusy = disabled;
-      document.querySelectorAll("[data-provider]").forEach(btn => {
-        if (cloudMode) btn.disabled = disabled;
+// إنشاء الملف الشخصي مع رقم YXA فريد (معاملة ذرّية)
+async function ensureProfile(u){
+  const ref=doc(db,"users",u.uid), snap=await getDoc(ref);
+  if(snap.exists()) return {uid:u.uid,...snap.data()};
+  const name=u.displayName||(u.email||"مستخدم").split("@")[0];
+  for(let i=0;i<10;i++){
+    const yxaId="YXA-"+(100000+Math.floor(Math.random()*900000));
+    try{
+      await runTransaction(db,async t=>{
+        const idRef=doc(db,"yxaIds",yxaId);
+        if((await t.get(idRef)).exists()) throw new Error("taken");
+        t.set(idRef,{uid:u.uid});
+        t.set(ref,{name,yxaId,created:serverTimestamp()});
       });
-      $("em-in").disabled = disabled;
-      $("em-up").disabled = disabled;
+      return {uid:u.uid,name,yxaId};
+    }catch(e){ if(e.message!=="taken") throw e; }
+  }
+  throw new Error("تعذّر إنشاء رقم YXA، أعد المحاولة.");
+}
+
+// العرض
+function renderStories(items){
+  const box=$("stories"); box.replaceChildren();
+  items.forEach(s=>{
+    const b=el("button","btn story"); b.type="button";
+    b.append(el("span","small muted",s.author||"عضو"),el("span","",String(s.text||"").slice(0,30)));
+    b.onclick=()=>{$("s-by").textContent=s.author||"عضو";$("s-tx").textContent=s.text||"";openModal("m-story")};
+    box.append(b);
+  });
+  if(!items.length) box.append(el("span","small muted","لا توجد ستوريات. انشر أول ستوري."));
+}
+function renderFriends(items){
+  const l=$("f-list"); l.replaceChildren();
+  items.forEach(f=>{
+    const r=el("div","item row sp"), d=el("div"), b=el("button","btn primary","💬 محادثة");
+    d.append(el("div","bold",f.name||"عضو"),el("div","small mono muted",f.yxaId||""));
+    b.type="button"; b.onclick=()=>openChat(f); r.append(d,b); l.append(r);
+  });
+  if(!items.length) l.append(el("p","small muted","لم تضف أصدقاء بعد. أدخل رقم YXA لصديقك أعلاه."));
+}
+function renderPosts(){
+  const feed=$("posts"); feed.replaceChildren();
+  if(!posts.length) feed.append(el("p","small muted","لا توجد منشورات بعد."));
+  posts.forEach(p=>{
+    const card=el("article","card stack"), head=el("div","row sp"), acts=el("div","row");
+    const likes=Array.isArray(p.likes)?p.likes:[], liked=likes.includes(me.uid);
+    head.append(el("b","",p.author||"عضو"),el("span","small muted",fmt(p.ts)));
+    const lb=el("button","btn"+(liked?" primary":""),"❤️ "+likes.length); lb.type="button";
+    lb.onclick=()=>updateDoc(doc(db,"posts",p.id),{likes:liked?arrayRemove(me.uid):arrayUnion(me.uid)}).catch(e=>toast(errText(e)));
+    acts.append(lb);
+    if(p.uid===me.uid){
+      const d=el("button","btn","🗑️ حذف"); d.type="button";
+      d.onclick=()=>{pendingDel=p.id;openModal("m-del")}; acts.append(d);
     }
-
-    function openModal(id) {
-      $(id).hidden = false;
-    }
-
-    function stopChat() {
-      if (chatUnsubscribe) {
-        chatUnsubscribe();
-        chatUnsubscribe = null;
-      }
-      chatFriend = null;
-    }
-
-    function closeModals() {
-      document.querySelectorAll(".modal").forEach(modal => {
-        modal.hidden = true;
-      });
-      stopChat();
-    }
-
-    document.querySelectorAll("[data-close]").forEach(button => {
-      button.onclick = closeModals;
-    });
-
-    document.addEventListener("keydown", event => {
-      if (event.key === "Escape") closeModals();
-    });
-
-    async function copyText(text) {
-      try {
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(text);
-        } else {
-          const textarea = el("textarea");
-          textarea.value = text;
-          textarea.style.position = "fixed";
-          textarea.style.opacity = "0";
-          document.body.append(textarea);
-          textarea.select();
-          const copied = document.execCommand("copy");
-          textarea.remove();
-          if (!copied) throw new Error("تعذّر النسخ");
-        }
-        toast("تم النسخ: " + text);
-      } catch {
-        toast("تعذّر النسخ. انسخ النص يدوياً: " + text);
-      }
-    }
-
-    $("b-contact").onclick = () => openModal("m-contact");
-    $("copy-mail").onclick = () => copyText("ya8827860@gmail.com");
-
-    const tabs = [
-      ["home", "🏠 الرئيسية"],
-      ["friends", "👥 الأصدقاء"],
-      ["ai", "🧠 الذكاء"],
-      ["me", "👤 حسابي"]
-    ];
-
-    tabs.forEach(([id, label], index) => {
-      const button = el("button", "btn" + (index === 0 ? " primary" : ""), label);
-      button.type = "button";
-      button.onclick = () => {
-        document.querySelectorAll(".tab").forEach(section => {
-          section.classList.toggle("on", section.id === "t-" + id);
-        });
-        $("tabs").querySelectorAll(".btn").forEach(tabButton => {
-          tabButton.classList.toggle("primary", tabButton === button);
-        });
-      };
-      $("tabs").append(button);
-    });
-
-    function updateProfileUI() {
-      if (!me) return;
-      $("u-yxa").textContent = me.yxaId;
-      $("u-name").textContent = me.name;
-      $("a-name").value = me.name;
-      $("a-yxa").value = me.yxaId;
-      $("a-mail").value = me.email || "(بدون بريد)";
-    }
-
-    function renderStories(items) {
-      const container = $("stories");
-      container.replaceChildren();
-
-      items.forEach(story => {
-        const button = el("button", "btn story");
-        button.type = "button";
-        button.append(
-          el("span", "small muted", story.author || "عضو"),
-          el("span", "", String(story.text || "").slice(0, 30))
-        );
-        button.onclick = () => {
-          $("s-by").textContent = story.author || "عضو";
-          $("s-tx").textContent = story.text || "";
-          openModal("m-story");
-        };
-        container.append(button);
-      });
-
-      if (!items.length) {
-        container.append(el("span", "small muted", "لا توجد ستوريات"));
-      }
-    }
-
-    function renderFriends(items) {
-      const list = $("f-list");
-      list.replaceChildren();
-
-      items.forEach(friend => {
-        const row = el("div", "item row sp");
-        const details = el("div");
-        const chatButton = el("button", "btn primary", "💬 محادثة");
-
-        details.append(
-          el("div", "bold", friend.name || "عضو"),
-          el("div", "small mono muted", friend.yxaId || "")
-        );
-        chatButton.type = "button";
-        chatButton.onclick = () => openChat(friend);
-        row.append(details, chatButton);
-        list.append(row);
-      });
-
-      if (!items.length) {
-        list.append(el("p", "small muted", "لم تضف أصدقاء بعد."));
-      }
-    }
-
-    function renderPosts() {
-      const feed = $("posts");
-      feed.replaceChildren();
-
-      posts.forEach(post => {
-        const card = el("article", "card stack");
-        const header = el("div", "row sp");
-        const actions = el("div", "row");
-        const likes = Array.isArray(post.likes) ? post.likes : [];
-        const likedByMe = Boolean(me && likes.includes(me.uid));
-
-        header.append(
-          el("b", "", post.author || "عضو"),
-          el("span", "small muted", post.timeStr || formatTime(post.ts))
-        );
-
-        const text = el("p", "post-text", post.text || "");
-        const likeButton = el(
-          "button",
-          "btn" + (likedByMe ? " primary" : ""),
-          "❤️ " + likes.length
-        );
-        likeButton.type = "button";
-        likeButton.onclick = () => toggleLike(post, likes, likedByMe);
-        actions.append(likeButton);
-
-        if (me && post.uid === me.uid) {
-          const deleteButton = el("button", "btn", "🗑️ حذف");
-          deleteButton.type = "button";
-          deleteButton.onclick = () => {
-            pendingDeleteId = post.id;
-            openModal("m-del");
-          };
-          actions.append(deleteButton);
-        }
-
-        card.append(header, text, actions);
-        feed.append(card);
-      });
-    }
-
-    function renderLocalData() {
-      posts = LocalStore.get("posts", [{
-        id: "welcome",
-        uid: "system",
-        author: "إدارة YXA",
-        text: "مرحباً بك في منصة تواصل | YXA!",
-        likes: [],
-        timeStr: "الآن"
-      }]);
-
-      renderPosts();
-      renderStories(LocalStore.get("stories", [{
-        author: "تواصل",
-        text: "أهلاً بك في تواصل YXA ✨"
-      }]));
-      renderFriends(LocalStore.get("friends", [{
-        id: "support",
-        name: "الدعم الفني YXA",
-        yxaId: "YXA-056306"
-      }]));
-    }
-
-    function createLocalProfile(email) {
-      const storageKey = "yxa_demo_user_" + email.toLowerCase();
-      let profile = null;
-      try {
-        profile = JSON.parse(localStorage.getItem(storageKey) || "null");
-      } catch {}
-
-      if (!profile) {
-        const uid = globalThis.crypto?.randomUUID
-          ? globalThis.crypto.randomUUID()
-          : Date.now() + "_" + Math.random().toString(36).slice(2);
-
-        profile = {
-          uid: "local_" + uid,
-          name: email.split("@")[0] || "مستخدم YXA",
-          yxaId: "YXA-" + Math.floor(100000 + Math.random() * 900000),
-          email
-        };
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(profile));
-        } catch {}
-      }
-      return profile;
-    }
-
-    function enterLocalSession(email) {
-      me = createLocalProfile(email);
-      try {
-        localStorage.setItem("yxa_demo_last_email", email);
-      } catch {}
-      $("auth").hidden = true;
-      $("app").hidden = false;
-      updateProfileUI();
-      renderLocalData();
-      toast("تم الدخول إلى وضع التجربة المحلي.");
-    }
-
-    function authError(text) {
-      $("auth-err").textContent = text || "";
-    }
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDfDU6HT0mtAbiLlcuBXxrysTmHNI-rFEo",
-      authDomain: "yxa1-9833a.firebaseapp.com",
-      projectId: "yxa1-9833a",
-      storageBucket: "yxa1-9833a.firebasestorage.app",
-      messagingSenderId: "822764592315",
-      appId: "1:822764592315:web:12c11fc8ec855405cc1d9e",
-      measurementId: "G-HJLW4BRQC5"
-    };
-
-    let savedConfig = null;
-    try {
-      savedConfig = JSON.parse(localStorage.getItem("yxa_fb_cfg") || "null");
-    } catch {}
-
-    function isValidConfig(config) {
-      return Boolean(
-        config &&
-        typeof config.apiKey === "string" &&
-        config.apiKey &&
-        !config.apiKey.startsWith("PASTE") &&
-        typeof config.projectId === "string" &&
-        config.projectId &&
-        !config.projectId.startsWith("PASTE") &&
-        config.authDomain &&
-        config.appId
-      );
-    }
-
-    const activeConfig = isValidConfig(savedConfig)
-      ? savedConfig
-      : isValidConfig(firebaseConfig)
-        ? firebaseConfig
-        : null;
-
-    let cloudMode = false;
-    let auth = null;
-    let db = null;
-    let aiModel = null;
-    let fb = {};
-
-    if (location.protocol === "file:") {
-      $("file-warn").hidden = false;
-    }
-
-    $("open-setup").onclick = () => {
-      $("fb-json").value = savedConfig ? JSON.stringify(savedConfig, null, 2) : JSON.stringify(firebaseConfig, null, 2);
-      $("setup").hidden = false;
-    };
-
-    $("fb-save").onclick = () => {
-      try {
-        const config = JSON.parse($("fb-json").value.trim());
-        if (!isValidConfig(config)) {
-          throw new Error("تحقق من apiKey وauthDomain وprojectId وappId.");
-        }
-        localStorage.setItem("yxa_fb_cfg", JSON.stringify(config));
-        toast("تم حفظ الإعدادات. ستُعاد الصفحة لتفعيلها.");
-        setTimeout(() => location.reload(), 600);
-      } catch (error) {
-        toast("إعدادات غير صالحة: " + error.message);
-      }
-    };
-
-    $("fb-clear").onclick = () => {
-      try {
-        localStorage.removeItem("yxa_fb_cfg");
-      } catch {}
-      toast("تم مسح إعدادات Firebase.");
-      setTimeout(() => location.reload(), 600);
-    };
-
-    function listenToCloudData() {
-      unsubscribers.forEach(unsubscribe => unsubscribe());
-      unsubscribers = [];
-      const onError = error => toast(errorText(error));
-
-      unsubscribers.push(
-        fb.onSnapshot(
-          fb.query(fb.collection(db, "posts"), fb.orderBy("ts", "desc"), fb.limit(50)),
-          snapshot => {
-            posts = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-            renderPosts();
-          },
-          onError
-        )
-      );
-
-      unsubscribers.push(
-        fb.onSnapshot(
-          fb.query(fb.collection(db, "stories"), fb.orderBy("ts", "desc"), fb.limit(20)),
-          snapshot => {
-            renderStories(snapshot.docs.map(item => ({ id: item.id, ...item.data() })));
-          },
-          onError
-        )
-      );
-
-      unsubscribers.push(
-        fb.onSnapshot(
-          fb.collection(db, "users", me.uid, "friends"),
-          snapshot => {
-            renderFriends(snapshot.docs.map(item => ({ id: item.id, ...item.data() })));
-          },
-          onError
-        )
-      );
-    }
-
-    function fallbackProfile(user) {
-      const digits = [...String(user.uid || "000000")].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) % 900000, 100000);
-      return {
-        uid: user.uid,
-        name: user.displayName || (user.email || "مستخدم").split("@")[0],
-        yxaId: "YXA-" + String(digits).padStart(6, "0"),
-        email: user.email || ""
-      };
-    }
-
-    async function ensureProfile(user) {
-      const profileRef = fb.doc(db, "users", user.uid);
-      const snapshot = await fb.getDoc(profileRef);
-      if (snapshot.exists()) {
-        return { uid: user.uid, ...snapshot.data() };
-      }
-
-      let yxaId = null;
-      for (let attempt = 0; attempt < 8 && !yxaId; attempt++) {
-        const candidate = "YXA-" + Math.floor(100000 + Math.random() * 900000);
-        const existing = await fb.getDocs(
-          fb.query(fb.collection(db, "users"), fb.where("yxaId", "==", candidate), fb.limit(1))
-        );
-        if (existing.empty) yxaId = candidate;
-      }
-
-      if (!yxaId) {
-        yxaId = fallbackProfile(user).yxaId;
-      }
-
-      const profile = {
-        name: user.displayName || (user.email || "مستخدم").split("@")[0],
-        yxaId,
-        created: fb.serverTimestamp()
-      };
-      await fb.setDoc(profileRef, profile);
-      return { uid: user.uid, ...profile };
-    }
-
-    async function initApp() {
-      if (activeConfig) {
-        try {
-          const v = "10.14.1";
-          const [appMod, authMod, fsMod] = await Promise.all([
-            import(`https://www.gstatic.com/firebasejs/${v}/firebase-app.js`),
-            import(`https://www.gstatic.com/firebasejs/${v}/firebase-auth.js`),
-            import(`https://www.gstatic.com/firebasejs/${v}/firebase-firestore.js`)
-          ]);
-
-          fb = { ...authMod, ...fsMod };
-          const firebaseApp = appMod.initializeApp(activeConfig);
-          auth = authMod.getAuth(firebaseApp);
-          db = fsMod.getFirestore(firebaseApp);
-          cloudMode = true;
-          $("mode-badge").textContent = "الوضع السحابي: Firebase (" + activeConfig.projectId + ")";
-
-          try {
-            const appCheckMod = await import(`https://www.gstatic.com/firebasejs/${v}/firebase-app-check.js`);
-            if (typeof appCheckMod.initializeAppCheck === "function") {
-              const isLocalhost = ["localhost", "127.0.0.1"].includes(location.hostname);
-              if (isLocalhost) {
-                self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-              }
-              const provider = activeConfig.recaptchaSiteKey && typeof appCheckMod.ReCaptchaV3Provider === "function"
-                ? new appCheckMod.ReCaptchaV3Provider(activeConfig.recaptchaSiteKey)
-                : typeof appCheckMod.CustomProvider === "function"
-                  ? new appCheckMod.CustomProvider({
-                      getToken: async () => ({ token: "", expireTimeMillis: Date.now() + 60000 })
-                    })
-                  : null;
-              if (provider) {
-                appCheckMod.initializeAppCheck(firebaseApp, {
-                  provider,
-                  isTokenAutoRefreshEnabled: true
-                });
-              }
-            }
-          } catch {}
-
-          try {
-            const aiMod = await import(`https://www.gstatic.com/firebasejs/${v}/firebase-ai.js`);
-            if (typeof aiMod.getAI === "function" && typeof aiMod.getGenerativeModel === "function") {
-              const backend = typeof aiMod.GoogleAIBackend === "function"
-                ? new aiMod.GoogleAIBackend()
-                : undefined;
-              const ai = backend ? aiMod.getAI(firebaseApp, { backend }) : aiMod.getAI(firebaseApp);
-              aiModel = aiMod.getGenerativeModel(ai, { model: "gemini-4-hydrogen" });
-              $("ai-mode-note").textContent = "متصل بـ Firebase AI (gemini-4-hydrogen) مع إمكانية استخدام مفتاح Gemini كاحتياط.";
-            }
-          } catch {}
-
-          authMod.onAuthStateChanged(auth, async user => {
-            unsubscribers.forEach(unsubscribe => unsubscribe());
-            unsubscribers = [];
-            stopChat();
-
-            if (!user) {
-              me = null;
-              $("app").hidden = true;
-              $("auth").hidden = false;
-              return;
-            }
-
-            try {
-              me = await ensureProfile(user);
-              if (!me.email && user.email) me.email = user.email;
-              updateProfileUI();
-              $("auth").hidden = true;
-              $("app").hidden = false;
-              listenToCloudData();
-            } catch (error) {
-              me = fallbackProfile(user);
-              updateProfileUI();
-              $("auth").hidden = true;
-              $("app").hidden = false;
-              renderPosts();
-              renderStories([]);
-              renderFriends([]);
-              toast("تم الدخول، لكن الوصول لقاعدة البيانات يحتاج مراجعة القواعد: " + errorText(error));
-            }
-          });
-          return;
-        } catch (error) {
-          $("mode-badge").textContent = "تعذّر تشغيل Firebase: " + errorText(error);
-        }
-      }
-
-      $("mode-badge").textContent =
-        "وضع تجربة محلي فقط — لا توجد مصادقة أو مزامنة سحابية حقيقية.";
-      document.querySelectorAll(".provider").forEach(button => {
-        button.disabled = true;
-      });
-
-      let lastEmail = null;
-      try {
-        lastEmail = localStorage.getItem("yxa_demo_last_email");
-      } catch {}
-
-      if (lastEmail) {
-        enterLocalSession(lastEmail);
-      } else {
-        $("auth").hidden = false;
-        $("app").hidden = true;
-      }
-    }
-
-    document.querySelectorAll("[data-provider]").forEach(button => {
-      button.onclick = async () => {
-        if (authBusy) return;
-        authError();
-        if (!cloudMode || !auth) {
-          authError("فعّل Firebase أولاً لاستخدام تسجيل الدخول الاجتماعي.");
-          return;
-        }
-        setAuthButtonsDisabled(true);
-        try {
-          const p = button.dataset.provider;
-          let provider;
-          if (p === "google") provider = new fb.GoogleAuthProvider();
-          else if (p === "github") provider = new fb.GithubAuthProvider();
-          else {
-            provider = new fb.OAuthProvider("apple.com");
-            provider.addScope("email");
-            provider.addScope("name");
-          }
-          await fb.signInWithPopup(auth, provider);
-        } catch (error) {
-          authError(errorText(error));
-        } finally {
-          setAuthButtonsDisabled(false);
-        }
-      };
-    });
-
-    async function emailAuth(createAccount) {
-      if (authBusy) return;
-      authError();
-      const email = $("em").value.trim();
-      const password = $("pw").value;
-
-      if (!email || !password) {
-        authError("أدخل البريد الإلكتروني وكلمة المرور.");
-        return;
-      }
-      if (password.length < 6) {
-        authError("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
-        return;
-      }
-      if (!cloudMode) {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          authError("البريد الإلكتروني غير صالح.");
-          return;
-        }
-        enterLocalSession(email);
-        return;
-      }
-
-      setAuthButtonsDisabled(true);
-      try {
-        if (createAccount) {
-          await fb.createUserWithEmailAndPassword(auth, email, password);
-        } else {
-          await fb.signInWithEmailAndPassword(auth, email, password);
-        }
-      } catch (error) {
-        authError(errorText(error));
-      } finally {
-        setAuthButtonsDisabled(false);
-      }
-    }
-
-    $("em-in").onclick = () => emailAuth(false);
-    $("em-up").onclick = () => emailAuth(true);
-    $("pw").onkeydown = event => {
-      if (event.key === "Enter") emailAuth(false);
-    };
-
-    $("b-out").onclick = async () => {
-      if (!cloudMode) {
-        me = null;
-        try {
-          localStorage.removeItem("yxa_demo_last_email");
-        } catch {}
-        closeModals();
-        $("app").hidden = true;
-        $("auth").hidden = false;
-        return;
-      }
-      try {
-        await fb.signOut(auth);
-      } catch (error) {
-        toast(errorText(error));
-      }
-    };
-
-    $("post-add").onclick = async () => {
-      const text = $("post-in").value.trim();
-      if (!text || !me) return;
-
-      if (!cloudMode) {
-        posts = [{
-          id: "p_" + Date.now(),
-          uid: me.uid,
-          author: me.name,
-          text,
-          likes: [],
-          timeStr: "الآن"
-        }, ...posts];
-        LocalStore.set("posts", posts);
-        $("post-in").value = "";
-        renderPosts();
-        toast("تم نشر المنشور محلياً.");
-        return;
-      }
-
-      try {
-        await fb.addDoc(fb.collection(db, "posts"), {
-          uid: me.uid,
-          author: me.name,
-          text,
-          likes: [],
-          ts: fb.serverTimestamp()
-        });
-        $("post-in").value = "";
-        toast("تم النشر.");
-      } catch (error) {
-        toast(errorText(error));
-      }
-    };
-
-    async function toggleLike(post, likes, likedByMe) {
-      if (!me) return;
-      const nextLikes = likedByMe
-        ? likes.filter(id => id !== me.uid)
-        : [...likes, me.uid];
-
-      if (!cloudMode) {
-        posts = posts.map(item => item.id === post.id ? { ...item, likes: nextLikes } : item);
-        LocalStore.set("posts", posts);
-        renderPosts();
-        return;
-      }
-
-      try {
-        await fb.updateDoc(fb.doc(db, "posts", post.id), {
-          likes: likedByMe ? fb.arrayRemove(me.uid) : fb.arrayUnion(me.uid)
-        });
-      } catch (error) {
-        toast(errorText(error));
-      }
-    }
-
-    $("del-yes").onclick = async () => {
-      if (!pendingDeleteId) return;
-      const id = pendingDeleteId;
-      pendingDeleteId = null;
-      closeModals();
-
-      if (!cloudMode) {
-        posts = posts.filter(item => item.id !== id);
-        LocalStore.set("posts", posts);
-        renderPosts();
-        toast("تم حذف المنشور.");
-        return;
-      }
-
-      try {
-        await fb.deleteDoc(fb.doc(db, "posts", id));
-        toast("تم حذف المنشور.");
-      } catch (error) {
-        toast(errorText(error));
-      }
-    };
-
-    $("st-add").onclick = () => {
-      $("st-in").value = "";
-      openModal("m-add-story");
-    };
-
-    $("st-save").onclick = async () => {
-      const text = $("st-in").value.trim();
-      if (!text || !me) return;
-
-      if (!cloudMode) {
-        const current = LocalStore.get("stories", []);
-        const updated = [{ author: me.name, text }, ...current].slice(0, 20);
-        LocalStore.set("stories", updated);
-        renderStories(updated);
-        closeModals();
-        toast("تم نشر الستوري محلياً.");
-        return;
-      }
-
-      try {
-        await fb.addDoc(fb.collection(db, "stories"), {
-          uid: me.uid,
-          author: me.name,
-          text,
-          ts: fb.serverTimestamp()
-        });
-        closeModals();
-        toast("تم نشر الستوري.");
-      } catch (error) {
-        toast(errorText(error));
-      }
-    };
-
-    $("f-add").onclick = async () => {
-      const code = $("f-in").value.trim().toUpperCase();
-      if (!code || !me) return;
-
-      if (!cloudMode) {
-        const current = LocalStore.get("friends", []);
-        if (current.some(item => item.yxaId === code)) {
-          toast("هذا الصديق مضاف بالفعل.");
-          return;
-        }
-        const updated = [...current, { id: "f_" + Date.now(), name: code, yxaId: code }];
-        LocalStore.set("friends", updated);
-        renderFriends(updated);
-        $("f-in").value = "";
-        toast("تمت الإضافة محلياً.");
-        return;
-      }
-
-      try {
-        const snap = await fb.getDocs(
-          fb.query(fb.collection(db, "users"), fb.where("yxaId", "==", code), fb.limit(1))
-        );
-        if (snap.empty) {
-          toast("لم يتم العثور على مستخدم بهذا الرقم.");
-          return;
-        }
-        const target = snap.docs[0];
-        if (target.id === me.uid) {
-          toast("لا يمكنك إضافة نفسك.");
-          return;
-        }
-        await fb.setDoc(fb.doc(db, "users", me.uid, "friends", target.id), {
-          name: target.data().name || "عضو",
-          yxaId: target.data().yxaId || code
-        });
-        $("f-in").value = "";
-        toast("تمت إضافة الصديق.");
-      } catch (error) {
-        toast(errorText(error));
-      }
-    };
-
-    function chatRoomId(uidA, uidB) {
-      return [uidA, uidB].sort().join("_");
-    }
-
-    function renderChatMessages(messages) {
-      const feed = $("c-feed");
-      feed.replaceChildren();
-      messages.forEach(msg => {
-        const isMe = me && msg.senderId === me.uid;
-        feed.append(el("div", "bubble " + (isMe ? "me" : "other"), msg.text || ""));
-      });
-      feed.scrollTop = feed.scrollHeight;
-    }
-
-    function openChat(friend) {
-      stopChat();
-      chatFriend = friend;
-      $("c-name").textContent = friend.name || "عضو";
-      $("c-id").textContent = friend.yxaId || "";
-      $("c-in").value = "";
-      openModal("m-chat");
-
-      if (!cloudMode || !me || !friend.id || friend.id === "support") {
-        const key = "chat_" + (friend.yxaId || friend.id || "default");
-        renderChatMessages(LocalStore.get(key, []));
-        return;
-      }
-
-      const roomId = chatRoomId(me.uid, friend.id);
-      chatUnsubscribe = fb.onSnapshot(
-        fb.query(fb.collection(db, "chats", roomId, "messages"), fb.orderBy("ts", "asc"), fb.limit(100)),
-        snap => {
-          renderChatMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        },
-        error => toast(errorText(error))
-      );
-    }
-
-    $("c-send").onclick = async () => {
-      const text = $("c-in").value.trim();
-      if (!text || !me || !chatFriend) return;
-
-      if (!cloudMode || !chatFriend.id || chatFriend.id === "support") {
-        const key = "chat_" + (chatFriend.yxaId || chatFriend.id || "default");
-        const next = [...LocalStore.get(key, []), { senderId: me.uid, text }];
-        LocalStore.set(key, next);
-        $("c-in").value = "";
-        renderChatMessages(next);
-        return;
-      }
-
-      try {
-        const roomId = chatRoomId(me.uid, chatFriend.id);
-        await fb.addDoc(fb.collection(db, "chats", roomId, "messages"), {
-          senderId: me.uid,
-          text,
-          ts: fb.serverTimestamp()
-        });
-        $("c-in").value = "";
-      } catch (error) {
-        toast(errorText(error));
-      }
-    };
-
-    $("a-save").onclick = async () => {
-      const nextName = $("a-name").value.trim();
-      if (!nextName || !me) return;
-      me.name = nextName;
-      updateProfileUI();
-
-      if (!cloudMode) {
-        if (me.email) {
-          localStorage.setItem("yxa_demo_user_" + me.email.toLowerCase(), JSON.stringify(me));
-        }
-        toast("تم حفظ الاسم محلياً.");
-        return;
-      }
-
-      try {
-        await fb.updateDoc(fb.doc(db, "users", me.uid), { name: nextName });
-        toast("تم تحديث الاسم.");
-      } catch (error) {
-        toast(errorText(error));
-      }
-    };
-
-    $("a-copy").onclick = () => {
-      if (me?.yxaId) copyText(me.yxaId);
-    };
-
-    $("g-save").onclick = () => {
-      geminiKey = $("g-key").value.trim();
-      try {
-        localStorage.setItem("yxa_gkey", geminiKey);
-        toast("تم حفظ مفتاح Gemini.");
-      } catch {
-        toast("تعذّر حفظ المفتاح.");
-      }
-    };
-
-    async function generateWithModel(prompt) {
-      if (cloudMode && aiModel) {
-        const result = await aiModel.generateContent(prompt);
-        const text = result?.response?.text?.();
-        if (text?.trim()) return text.trim();
-      }
-
-      if (!geminiKey) {
-        toast("أدخل مفتاح Gemini API أو فعّل Firebase AI.");
-        return null;
-      }
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
-          })
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || "فشل طلب Gemini");
-      return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "لم يرد النموذج بنص.";
-    }
-
-    $("ai-send").onclick = async () => {
-      const prompt = $("ai-in").value.trim();
-      if (!prompt) return;
-      $("ai-in").value = "";
-      $("ai-feed").append(el("div", "bubble me", prompt));
-      try {
-        const reply = await generateWithModel(prompt);
-        if (reply) $("ai-feed").append(el("div", "bubble other", reply));
-      } catch (error) {
-        toast(errorText(error));
-      }
-    };
-
-    $("post-ai").onclick = async () => {
-      const draft = $("post-in").value.trim();
-      if (!draft) {
-        toast("اكتب مسودة أولاً ليصيغها الذكاء الاصطناعي.");
-        return;
-      }
-      try {
-        const polished = await generateWithModel(`أعد صياغة المنشور التالي بأسلوب واضح وجذاب باللغة العربية دون مقدمات:\n${draft}`);
-        if (polished) $("post-in").value = polished;
-      } catch (error) {
-        toast(errorText(error));
-      }
-    };
-
-    initApp();
-  </script>
+    card.append(head,el("p","post-text",p.text||""),acts); feed.append(card);
+  });
+}
+
+function listen(){
+  unsubs.forEach(u=>u()); unsubs=[];
+  const onErr=e=>toast(errText(e));
+  unsubs.push(onSnapshot(query(collection(db,"posts"),orderBy("ts","desc"),limit(50)),s=>{posts=s.docs.map(read);renderPosts()},onErr));
+  const since=Timestamp.fromMillis(Date.now()-864e5);
+  unsubs.push(onSnapshot(query(collection(db,"stories"),where("ts",">",since),orderBy("ts","desc"),limit(20)),s=>renderStories(s.docs.map(read)),onErr));
+  unsubs.push(onSnapshot(collection(db,"users",me.uid,"friends"),s=>renderFriends(s.docs.map(read)),onErr));
+}
+
+// الجلسة
+const authErr = t=>{$("auth-err").textContent=t||""};
+const lock = v=>document.querySelectorAll(".provider,#em-in,#em-up").forEach(b=>b.disabled=v);
+onAuthStateChanged(auth, async u=>{
+  unsubs.forEach(x=>x()); unsubs=[]; chatUnsub?.(); chatUnsub=null;
+  lock(false); $("boot").textContent="سجّل الدخول للمتابعة.";
+  if(!u){me=user=null;$("app").hidden=true;$("auth").hidden=false;return}
+  try{
+    user=u; me=await ensureProfile(u); paintProfile();
+    $("auth").hidden=true; $("app").hidden=false; listen();
+  }catch(e){
+    toast(errText(e)); await signOut(auth);
+  }
+});
+
+document.querySelectorAll("[data-p]").forEach(b=>b.onclick=async()=>{
+  authErr(); lock(true);
+  try{ await signInWithPopup(auth,b.dataset.p==="google"?new GoogleAuthProvider():new GithubAuthProvider()); }
+  catch(e){ authErr(errText(e)); lock(false); }
+});
+async function emailAuth(create){
+  authErr();
+  const email=$("em").value.trim(), pw=$("pw").value;
+  if(!email||!pw) return authErr("أدخل البريد الإلكتروني وكلمة المرور.");
+  if(pw.length<6) return authErr("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
+  lock(true);
+  try{ await (create?createUserWithEmailAndPassword:signInWithEmailAndPassword)(auth,email,pw); }
+  catch(e){ authErr(errText(e)); lock(false); }
+}
+$("em-in").onclick=()=>emailAuth(false);
+$("em-up").onclick=()=>emailAuth(true);
+$("pw").onkeydown=e=>{if(e.key==="Enter")emailAuth(false)};
+$("reset").onclick=async()=>{
+  const email=$("em").value.trim();
+  if(!email) return authErr("اكتب بريدك أولاً ثم اضغط «نسيت كلمة المرور».");
+  try{await sendPasswordResetEmail(auth,email);authErr();toast("أُرسل رابط إعادة التعيين إن كان البريد مسجلاً.")}catch(e){authErr(errText(e))}
+};
+$("b-out").onclick=()=>signOut(auth).catch(e=>toast(errText(e)));
+
+// المنشورات
+$("post-add").onclick=async()=>{
+  const text=$("post-in").value.trim(); if(!text) return;
+  try{
+    await addDoc(collection(db,"posts"),{uid:me.uid,author:me.name,text,likes:[],ts:serverTimestamp()});
+    $("post-in").value=""; toast("تم النشر.");
+  }catch(e){toast(errText(e))}
+};
+$("del-yes").onclick=async()=>{
+  const id=pendingDel; pendingDel=null; closeModals(); if(!id) return;
+  try{await deleteDoc(doc(db,"posts",id));toast("تم حذف المنشور.")}catch(e){toast(errText(e))}
+};
+
+// الستوريات
+$("st-add").onclick=()=>{$("st-in").value="";openModal("m-add-story")};
+$("st-save").onclick=async()=>{
+  const text=$("st-in").value.trim(); if(!text) return;
+  try{
+    await addDoc(collection(db,"stories"),{uid:me.uid,author:me.name,text,ts:serverTimestamp()});
+    closeModals(); toast("تم نشر الستوري.");
+  }catch(e){toast(errText(e))}
+};
+
+// الأصدقاء
+$("f-add").onclick=async()=>{
+  const code=$("f-in").value.trim().toUpperCase(); if(!code) return;
+  try{
+    const idSnap=await getDoc(doc(db,"yxaIds",code));
+    if(!idSnap.exists()) return toast("لم يتم العثور على مستخدم بهذا الرقم.");
+    const uid=idSnap.data().uid;
+    if(uid===me.uid) return toast("لا يمكنك إضافة نفسك.");
+    const u=await getDoc(doc(db,"users",uid));
+    await setDoc(doc(db,"users",me.uid,"friends",uid),{name:u.data()?.name||"عضو",yxaId:code});
+    $("f-in").value=""; toast("تمت إضافة الصديق.");
+  }catch(e){toast(errText(e))}
+};
+
+// المحادثة
+const room=(a,b)=>[a,b].sort().join("_");
+function openChat(f){
+  closeModals(); chatFriend=f;
+  $("c-name").textContent=f.name||"عضو"; $("c-id").textContent=f.yxaId||""; $("c-in").value="";
+  openModal("m-chat");
+  chatUnsub=onSnapshot(query(collection(db,"chats",room(me.uid,f.id),"messages"),orderBy("ts","desc"),limit(100)),s=>{
+    const feed=$("c-feed"); feed.replaceChildren();
+    s.docs.map(read).reverse().forEach(m=>feed.append(el("div","bubble "+(m.senderId===me.uid?"me":"other"),m.text||"")));
+    feed.scrollTop=feed.scrollHeight;
+  },e=>toast(errText(e)));
+}
+async function sendChat(){
+  const text=$("c-in").value.trim(); if(!text||!chatFriend) return;
+  $("c-in").value="";
+  try{await addDoc(collection(db,"chats",room(me.uid,chatFriend.id),"messages"),{senderId:me.uid,text,ts:serverTimestamp()})}
+  catch(e){$("c-in").value=text;toast(errText(e))}
+}
+$("c-send").onclick=sendChat;
+$("c-in").onkeydown=e=>{if(e.key==="Enter")sendChat()};
+
+// الحساب
+$("a-save").onclick=async()=>{
+  const name=$("a-name").value.trim(); if(!name) return;
+  try{await updateDoc(doc(db,"users",me.uid),{name});me.name=name;paintProfile();toast("تم تحديث الاسم.")}
+  catch(e){toast(errText(e))}
+};
+$("a-copy").onclick=()=>copy(me.yxaId);
+
+// الذكاء الاصطناعي (Firebase AI Logic)
+const aiErr=e=>toast(/403|not.*enabled|API/i.test(e?.message||"")?"فعّل Firebase AI Logic وواجهة Gemini من لوحة Firebase.":errText(e));
+$("ai-send").onclick=async()=>{
+  const p=$("ai-in").value.trim(); if(!p) return;
+  $("ai-in").value=""; $("ai-send").disabled=true;
+  $("ai-feed").append(el("div","bubble me",p));
+  try{
+    const r=await aiChat.sendMessage(p);
+    $("ai-feed").append(el("div","bubble other",r.response.text()));
+    $("ai-feed").scrollTop=$("ai-feed").scrollHeight;
+  }catch(e){aiErr(e)}finally{$("ai-send").disabled=false}
+};
+$("ai-in").onkeydown=e=>{if(e.key==="Enter")$("ai-send").click()};
+$("post-ai").onclick=async()=>{
+  const d=$("post-in").value.trim();
+  if(!d) return toast("اكتب مسودة أولاً.");
+  $("post-ai").disabled=true;
+  try{
+    const r=await model.generateContent("أعد صياغة المنشور التالي بأسلوب واضح وجذاب بالعربية دون مقدمات:\n"+d);
+    const t=r.response.text().trim(); if(t) $("post-in").value=t.slice(0,1000);
+  }catch(e){aiErr(e)}finally{$("post-ai").disabled=false}
+};
+</script>
 </body>
 </html>
