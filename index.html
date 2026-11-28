@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 <head>
@@ -11,33 +12,36 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
 
   <style>
+    /* إعادة ضبط الهوامش وتحديد الخط الأساسي */
     * {
       box-sizing: border-box;
       font-family: "Cairo", system-ui, sans-serif;
     }
 
+    /* متغيرات الألوان للوضع النهاري */
     :root {
       color-scheme: light;
       --bg: #f5f5f5;
       --fg: #0a0a0a;
-      --card: #fff;
+      --card: #ffffff;
       --border: #d4d4d4;
       --subtle: #ececec;
       --muted: #737373;
-      --inverse: #000;
-      --inverse-fg: #fff;
+      --inverse: #000000;
+      --inverse-fg: #ffffff;
     }
 
+    /* متغيرات الألوان للوضع الليلي */
     .dark {
       color-scheme: dark;
-      --bg: #000;
+      --bg: #000000;
       --fg: #fafafa;
       --card: #0a0a0a;
       --border: #262626;
       --subtle: #171717;
       --muted: #a3a3a3;
-      --inverse: #fff;
-      --inverse-fg: #000;
+      --inverse: #ffffff;
+      --inverse-fg: #000000;
     }
 
     [hidden] { display: none !important; }
@@ -52,6 +56,7 @@
 
     button, input, textarea { font: inherit; }
 
+    /* تنسيق الشاشات والنوافذ المنبثقة */
     .screen, .modal {
       position: fixed;
       inset: 0;
@@ -67,7 +72,7 @@
 
     .card {
       width: 100%;
-      padding: 1.1rem;
+      padding: 1.15rem;
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 1.25rem;
@@ -83,6 +88,7 @@
 
     .sp { justify-content: space-between; }
 
+    /* حقول الإدخال */
     .inp {
       width: 100%;
       min-width: 0;
@@ -105,6 +111,7 @@
       font-weight: 700;
     }
 
+    /* الأزرار */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -121,7 +128,7 @@
       transition: transform .14s, opacity .14s;
     }
 
-    .btn:hover { opacity: .82; }
+    .btn:hover { opacity: .85; }
     .btn:active { transform: scale(.97); }
     .btn:disabled { opacity: .5; cursor: not-allowed; }
 
@@ -143,6 +150,7 @@
       padding: 1rem;
     }
 
+    /* شريط التبويبات */
     .tabs {
       display: flex;
       gap: .4rem;
@@ -155,6 +163,7 @@
     .tab.on { display: block; }
     .tab > * + * { margin-top: 1rem; }
 
+    /* المحادثات والفقاعات */
     .feed {
       display: flex;
       flex-direction: column;
@@ -164,7 +173,7 @@
 
     .bubble {
       max-width: 85%;
-      padding: .7rem;
+      padding: .7rem .85rem;
       border-radius: 1rem;
       font-size: .82rem;
       line-height: 1.7;
@@ -197,6 +206,7 @@
       font-weight: 700;
     }
 
+    /* الإشعارات المنبثقة */
     #toasts {
       position: fixed;
       top: 1rem;
@@ -216,6 +226,7 @@
       font-size: .8rem;
       font-weight: 700;
       overflow-wrap: anywhere;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 35%);
     }
 
     .logo {
@@ -238,9 +249,12 @@
 
     .story {
       flex-shrink: 0;
-      max-width: 160px;
+      max-width: 165px;
       text-align: right;
       white-space: normal;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: .2rem;
     }
 
     @media (max-width: 480px) {
@@ -262,7 +276,7 @@
 <body>
   <div id="toasts" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- إعداد Firebase -->
+  <!-- نافذة إعدادات Firebase -->
   <div id="setup" class="modal" hidden role="dialog" aria-modal="true">
     <div class="card stack" style="max-width:520px">
       <div class="row sp">
@@ -270,30 +284,29 @@
         <button class="btn" data-close aria-label="إغلاق">✕</button>
       </div>
       <p class="small muted" style="line-height:1.9">
-        أدخل إعدادات مشروع Firebase بصيغة JSON لتفعيل الحسابات والبيانات السحابية.
-        وضع التجربة المحلي لا يوفر مصادقة حقيقية.
+        إعدادات مشروع Firebase مدمجة وجاهزة. يمكنك تعديلها بصيغة JSON أدناه إذا أردت الربط بمشروع آخر.
       </p>
-      <textarea id="fb-json" class="inp mono" rows="6" dir="ltr"
+      <textarea id="fb-json" class="inp mono" rows="7" dir="ltr"
         style="text-align:left"
         placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","appId":"..."}'></textarea>
       <div class="row">
         <button id="fb-save" class="btn primary" style="flex:1">حفظ وتفعيل</button>
-        <button id="fb-clear" class="btn">مسح الإعدادات</button>
+        <button id="fb-clear" class="btn">استعادة الافتراضي</button>
       </div>
     </div>
   </div>
 
-  <!-- تسجيل الدخول -->
+  <!-- شاشة تسجيل الدخول -->
   <div id="auth" class="screen">
     <div class="card stack" style="max-width:420px">
       <div class="stack" style="text-align:center">
         <div class="logo" style="margin:auto">YXA</div>
         <h2 class="bold">تواصل | YXA</h2>
-        <p id="mode-badge" class="small muted">جاري التحميل...</p>
+        <p id="mode-badge" class="small muted">جاري الاتصال بالسحابة...</p>
       </div>
 
       <p id="file-warn" class="error" hidden>
-        ⚠️ الدخول الاجتماعي يحتاج إلى رابط http(s) أو localhost.
+        ⚠️ الدخول بحسابات Google أو Apple أو GitHub يتطلب فتح الموقع عبر رابط http(s) أو localhost.
       </p>
 
       <button class="btn primary provider" data-provider="google" style="width:100%">
@@ -317,13 +330,13 @@
       </div>
 
       <button id="open-setup" class="btn small" style="width:100%">
-        ⚙️ إعداد مشروع Firebase
+        ⚙️ إعدادات مشروع Firebase
       </button>
       <p id="auth-err" class="error" role="alert"></p>
     </div>
   </div>
 
-  <!-- التطبيق -->
+  <!-- واجهة التطبيق الرئيسية -->
   <div id="app" hidden>
     <main class="wrap">
       <header class="row sp card" style="padding:.75rem 1rem">
@@ -342,6 +355,7 @@
 
       <nav id="tabs" class="tabs" aria-label="التنقل"></nav>
 
+      <!-- تبويب الرئيسية -->
       <section id="t-home" class="tab on">
         <div class="card stack">
           <div class="row sp">
@@ -363,6 +377,7 @@
         <div id="posts" class="stack"></div>
       </section>
 
+      <!-- تبويب الأصدقاء -->
       <section id="t-friends" class="tab">
         <div class="card stack">
           <b>إضافة صديق برقم YXA</b>
@@ -377,11 +392,12 @@
         </div>
       </section>
 
+      <!-- تبويب الذكاء الاصطناعي -->
       <section id="t-ai" class="tab">
         <div class="card stack">
           <b>🧠 الذكاء الاصطناعي</b>
           <p id="ai-mode-note" class="small muted">
-            أدخل مفتاح Gemini API لاستخدام الذكاء الاصطناعي، أو فعّل Firebase.
+            أدخل مفتاح Gemini API لاستخدام المساعد الذكي، أو استخدم Firebase AI إن كان مفعّلاً.
           </p>
           <div class="row" id="g-key-row">
             <input id="g-key" type="password" class="inp mono"
@@ -399,6 +415,7 @@
         </div>
       </section>
 
+      <!-- تبويب الحساب الشخصي -->
       <section id="t-me" class="tab">
         <div class="card stack">
           <b>الملف الشخصي</b>
@@ -424,7 +441,7 @@
     </main>
   </div>
 
-  <!-- عرض ستوري -->
+  <!-- نافذة عرض الستوري -->
   <div id="m-story" class="modal" hidden role="dialog" aria-modal="true">
     <div class="card stack" style="max-width:380px">
       <div class="row sp">
@@ -435,7 +452,7 @@
     </div>
   </div>
 
-  <!-- إضافة ستوري -->
+  <!-- نافذة إضافة ستوري -->
   <div id="m-add-story" class="modal" hidden role="dialog" aria-modal="true">
     <div class="card stack" style="max-width:400px">
       <div class="row sp">
@@ -448,7 +465,7 @@
     </div>
   </div>
 
-  <!-- تأكيد الحذف -->
+  <!-- نافذة تأكيد حذف منشور -->
   <div id="m-del" class="modal" hidden role="dialog" aria-modal="true">
     <div class="card stack" style="max-width:340px;text-align:center">
       <b>هل تريد حذف هذا المنشور؟</b>
@@ -459,7 +476,7 @@
     </div>
   </div>
 
-  <!-- التواصل -->
+  <!-- نافذة التواصل المباشر -->
   <div id="m-contact" class="modal" hidden role="dialog" aria-modal="true">
     <div class="card stack" style="max-width:400px">
       <div class="row sp">
@@ -484,7 +501,7 @@
     </div>
   </div>
 
-  <!-- المحادثة -->
+  <!-- نافذة المحادثة -->
   <div id="m-chat" class="modal" hidden role="dialog" aria-modal="true">
     <div class="card stack" style="max-width:520px">
       <div class="row sp">
@@ -503,8 +520,10 @@
   </div>
 
   <script type="module">
+    // اختصار الوصول للعناصر عبر المعرّف
     const $ = id => document.getElementById(id);
 
+    // دالة مساعدة لإنشاء عناصر DOM بأمان دون HTML خام
     function el(tag, className = "", text = null) {
       const node = document.createElement(tag);
       if (className) node.className = className;
@@ -512,12 +531,14 @@
       return node;
     }
 
+    // عرض إشعار مؤقت أعلى الشاشة
     function toast(text) {
       const node = el("div", "toast", text);
       $("toasts").append(node);
-      setTimeout(() => node.remove(), 3500);
+      setTimeout(() => node.remove(), 3800);
     }
 
+    // تنسيق الطابع الزمني للعرض بالعربية
     function formatTime(timestamp) {
       try {
         return timestamp?.toDate
@@ -531,6 +552,7 @@
       }
     }
 
+    // ترجمة رموز أخطاء Firebase إلى رسائل واضحة
     const errorMessages = {
       "auth/unauthorized-domain": "هذا النطاق غير مضاف إلى النطاقات المصرح بها في Firebase.",
       "auth/operation-not-supported-in-this-environment": "شغّل الصفحة من رابط http(s) أو localhost.",
@@ -538,16 +560,20 @@
       "auth/cancelled-popup-request": "أُلغيت نافذة الدخول السابقة.",
       "auth/popup-blocked": "المتصفح حظر النافذة المنبثقة.",
       "auth/operation-not-allowed": "طريقة الدخول غير مفعّلة في Firebase.",
-      "auth/invalid-credential": "بيانات الدخول غير صحيحة.",
-      "auth/email-already-in-use": "البريد مستخدم مسبقاً.",
-      "auth/weak-password": "كلمة المرور ضعيفة (6 أحرف على الأقل).",
+      "auth/invalid-credential": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+      "auth/user-not-found": "لا يوجد حساب مسجّل بهذا البريد.",
+      "auth/wrong-password": "كلمة المرور غير صحيحة.",
+      "auth/email-already-in-use": "هذا البريد مسجّل مسبقاً؛ اضغط على زر (دخول) بدلاً من إنشاء حساب.",
+      "auth/weak-password": "كلمة المرور ضعيفة (يجب أن تكون 6 أحرف على الأقل).",
       "auth/invalid-email": "البريد الإلكتروني غير صالح.",
+      "auth/too-many-requests": "تم حظر المحاولات مؤقتاً لكثرة الطلبات. انتظر 15 دقيقة ثم جرب زر (دخول).",
       "auth/network-request-failed": "تعذّر الاتصال بالإنترنت.",
-      "permission-denied": "لا توجد صلاحية؛ راجع قواعد Firestore."
+      "permission-denied": "لا توجد صلاحية في قاعدة البيانات؛ تأكد من نشر قواعد Firestore."
     };
 
     const errorText = error => errorMessages[error?.code] || error?.message || String(error);
 
+    // مخزن محلي احتياطي عند العمل دون اتصال سحابي
     const LocalStore = {
       get(key, fallback) {
         try {
@@ -567,6 +593,7 @@
       }
     };
 
+    // التحكم في السمة (ليلي / نهاري)
     function setTheme(theme) {
       document.documentElement.classList.toggle("dark", theme === "dark");
       try {
@@ -584,6 +611,7 @@
       setTheme(document.documentElement.classList.contains("dark") ? "light" : "dark");
     };
 
+    // متغيرات حالة التطبيق
     let me = null;
     let posts = [];
     let pendingDeleteId = null;
@@ -591,12 +619,14 @@
     let chatUnsubscribe = null;
     let unsubscribers = [];
     let geminiKey = "";
+    let authBusy = false;
 
     try {
       geminiKey = localStorage.getItem("yxa_gkey") || "";
     } catch {}
     $("g-key").value = geminiKey;
 
+    // إدارة النوافذ المنبثقة
     function openModal(id) {
       $(id).hidden = false;
     }
@@ -624,6 +654,7 @@
       if (event.key === "Escape") closeModals();
     });
 
+    // نسخ النص إلى الحافظة
     async function copyText(text) {
       try {
         if (navigator.clipboard && window.isSecureContext) {
@@ -648,6 +679,7 @@
     $("b-contact").onclick = () => openModal("m-contact");
     $("copy-mail").onclick = () => copyText("ya8827860@gmail.com");
 
+    // بناء شريط التبويبات
     const tabs = [
       ["home", "🏠 الرئيسية"],
       ["friends", "👥 الأصدقاء"],
@@ -669,6 +701,7 @@
       $("tabs").append(button);
     });
 
+    // تحديث بيانات الملف الشخصي في الواجهة
     function updateProfileUI() {
       if (!me) return;
       $("u-yxa").textContent = me.yxaId;
@@ -678,6 +711,7 @@
       $("a-mail").value = me.email || "(بدون بريد)";
     }
 
+    // عرض قائمة الستوريات
     function renderStories(items) {
       const container = $("stories");
       container.replaceChildren();
@@ -687,7 +721,7 @@
         button.type = "button";
         button.append(
           el("span", "small muted", story.author || "عضو"),
-          el("span", "", String(story.text || "").slice(0, 30))
+          el("span", "", String(story.text || "").slice(0, 32))
         );
         button.onclick = () => {
           $("s-by").textContent = story.author || "عضو";
@@ -698,10 +732,11 @@
       });
 
       if (!items.length) {
-        container.append(el("span", "small muted", "لا توجد ستوريات"));
+        container.append(el("span", "small muted", "لا توجد ستوريات حالياً"));
       }
     }
 
+    // عرض قائمة الأصدقاء
     function renderFriends(items) {
       const list = $("f-list");
       list.replaceChildren();
@@ -726,6 +761,7 @@
       }
     }
 
+    // عرض المنشورات
     function renderPosts() {
       const feed = $("posts");
       feed.replaceChildren();
@@ -767,6 +803,7 @@
       });
     }
 
+    // عرض البيانات في الوضع المحلي
     function renderLocalData() {
       posts = LocalStore.get("posts", [{
         id: "welcome",
@@ -830,6 +867,7 @@
       $("auth-err").textContent = text || "";
     }
 
+    // إعدادات مشروع Firebase الخاصة بك
     const firebaseConfig = {
       apiKey: "AIzaSyDfDU6HT0mtAbiLlcuBXxrysTmHNI-rFEo",
       authDomain: "yxa1-9833a.firebaseapp.com",
@@ -876,7 +914,7 @@
     }
 
     $("open-setup").onclick = () => {
-      $("fb-json").value = savedConfig ? JSON.stringify(savedConfig, null, 2) : JSON.stringify(firebaseConfig, null, 2);
+      $("fb-json").value = JSON.stringify(activeConfig || firebaseConfig, null, 2);
       $("setup").hidden = false;
     };
 
@@ -898,10 +936,11 @@
       try {
         localStorage.removeItem("yxa_fb_cfg");
       } catch {}
-      toast("تم مسح إعدادات Firebase.");
+      toast("تمت استعادة الإعدادات الافتراضية.");
       setTimeout(() => location.reload(), 600);
     };
 
+    // الاستماع الفوري لبيانات Firestore
     function listenToCloudData() {
       unsubscribers.forEach(unsubscribe => unsubscribe());
       unsubscribers = [];
@@ -939,6 +978,7 @@
       );
     }
 
+    // التحقق من ملف المستخدم في Firestore أو إنشاؤه عند أول دخول
     async function ensureProfile(user) {
       const profileRef = fb.doc(db, "users", user.uid);
       const snapshot = await fb.getDoc(profileRef);
@@ -956,7 +996,7 @@
       }
 
       if (!yxaId) {
-        throw new Error("تعذّر إنشاء رقم YXA، أعد المحاولة.");
+        yxaId = "YXA-" + String(Date.now()).slice(-6);
       }
 
       const profile = {
@@ -968,6 +1008,7 @@
       return { uid: user.uid, ...profile };
     }
 
+    // تهيئة التطبيق والربط السحابي
     async function initApp() {
       if (activeConfig) {
         try {
@@ -983,7 +1024,7 @@
           auth = authMod.getAuth(firebaseApp);
           db = fsMod.getFirestore(firebaseApp);
           cloudMode = true;
-          $("mode-badge").textContent = "الوضع السحابي: Firebase (" + activeConfig.projectId + ")";
+          $("mode-badge").textContent = "متصل بالسحابة: " + activeConfig.projectId;
 
           try {
             const aiMod = await import(`https://www.gstatic.com/firebasejs/${v}/firebase-ai.js`);
@@ -1010,14 +1051,24 @@
 
             try {
               me = await ensureProfile(user);
-              if (!me.email && user.email) me.email = user.email;
-              updateProfileUI();
-              $("auth").hidden = true;
-              $("app").hidden = false;
-              listenToCloudData();
             } catch (error) {
-              toast(errorText(error));
+              // في حال رفضت قواعد Firestore الكتابة، نعرض التنبيه ونسمح بدخول الواجهة برقم مؤقت
+              const msg = errorText(error);
+              authError(msg);
+              toast(msg);
+              me = {
+                uid: user.uid,
+                name: user.displayName || (user.email || "عضو").split("@")[0],
+                yxaId: "YXA-" + user.uid.slice(0, 6).toUpperCase(),
+                email: user.email || ""
+              };
             }
+
+            if (!me.email && user.email) me.email = user.email;
+            updateProfileUI();
+            $("auth").hidden = true;
+            $("app").hidden = false;
+            listenToCloudData();
           });
           return;
         } catch (error) {
@@ -1044,13 +1095,17 @@
       }
     }
 
+    // تسجيل الدخول عبر المزودين الاجتماعيين
     document.querySelectorAll("[data-provider]").forEach(button => {
       button.onclick = async () => {
+        if (authBusy) return;
         authError();
         if (!cloudMode || !auth) {
           authError("فعّل Firebase أولاً لاستخدام تسجيل الدخول الاجتماعي.");
           return;
         }
+        authBusy = true;
+        button.disabled = true;
         try {
           const p = button.dataset.provider;
           let provider;
@@ -1064,11 +1119,16 @@
           await fb.signInWithPopup(auth, provider);
         } catch (error) {
           authError(errorText(error));
+        } finally {
+          authBusy = false;
+          button.disabled = false;
         }
       };
     });
 
+    // تسجيل الدخول أو إنشاء حساب بالبريد الإلكتروني مع منع النقر المتكرر
     async function emailAuth(createAccount) {
+      if (authBusy) return;
       authError();
       const email = $("em").value.trim();
       const password = $("pw").value;
@@ -1090,6 +1150,10 @@
         return;
       }
 
+      authBusy = true;
+      $("em-in").disabled = true;
+      $("em-up").disabled = true;
+
       try {
         if (createAccount) {
           await fb.createUserWithEmailAndPassword(auth, email, password);
@@ -1098,6 +1162,10 @@
         }
       } catch (error) {
         authError(errorText(error));
+      } finally {
+        authBusy = false;
+        $("em-in").disabled = false;
+        $("em-up").disabled = false;
       }
     }
 
@@ -1107,6 +1175,7 @@
       if (event.key === "Enter") emailAuth(false);
     };
 
+    // تسجيل الخروج
     $("b-out").onclick = async () => {
       if (!cloudMode) {
         me = null;
@@ -1125,6 +1194,7 @@
       }
     };
 
+    // نشر منشور جديد
     $("post-add").onclick = async () => {
       const text = $("post-in").value.trim();
       if (!text || !me) return;
@@ -1160,6 +1230,7 @@
       }
     };
 
+    // الإعجاب بالمنشور
     async function toggleLike(post, likes, likedByMe) {
       if (!me) return;
       const nextLikes = likedByMe
@@ -1182,6 +1253,7 @@
       }
     }
 
+    // حذف منشور
     $("del-yes").onclick = async () => {
       if (!pendingDeleteId) return;
       const id = pendingDeleteId;
@@ -1204,6 +1276,7 @@
       }
     };
 
+    // إضافة ستوري
     $("st-add").onclick = () => {
       $("st-in").value = "";
       openModal("m-add-story");
@@ -1237,6 +1310,7 @@
       }
     };
 
+    // إضافة صديق برقم YXA
     $("f-add").onclick = async () => {
       const code = $("f-in").value.trim().toUpperCase();
       if (!code || !me) return;
@@ -1279,6 +1353,7 @@
       }
     };
 
+    // المحادثات الخاصة
     function chatRoomId(uidA, uidB) {
       return [uidA, uidB].sort().join("_");
     }
@@ -1343,6 +1418,11 @@
       }
     };
 
+    $("c-in").onkeydown = event => {
+      if (event.key === "Enter") $("c-send").click();
+    };
+
+    // تحديث الملف الشخصي
     $("a-save").onclick = async () => {
       const nextName = $("a-name").value.trim();
       if (!nextName || !me) return;
@@ -1358,7 +1438,10 @@
       }
 
       try {
-        await fb.updateDoc(fb.doc(db, "users", me.uid), { name: nextName });
+        await fb.setDoc(fb.doc(db, "users", me.uid), {
+          name: nextName,
+          yxaId: me.yxaId
+        }, { merge: true });
         toast("تم تحديث الاسم.");
       } catch (error) {
         toast(errorText(error));
@@ -1369,6 +1452,7 @@
       if (me?.yxaId) copyText(me.yxaId);
     };
 
+    // الذكاء الاصطناعي
     $("g-save").onclick = () => {
       geminiKey = $("g-key").value.trim();
       try {
@@ -1419,6 +1503,10 @@
       }
     };
 
+    $("ai-in").onkeydown = event => {
+      if (event.key === "Enter") $("ai-send").click();
+    };
+
     $("post-ai").onclick = async () => {
       const draft = $("post-in").value.trim();
       if (!draft) {
@@ -1433,7 +1521,9 @@
       }
     };
 
+    // بدء تشغيل التطبيق
     initApp();
   </script>
 </body>
 </html>
+```
