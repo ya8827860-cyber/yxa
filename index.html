@@ -194,12 +194,21 @@ const app = initializeApp({
   appId:"1:822764592315:web:12c11fc8ec855405cc1d9e",
   measurementId:"G-HJLW4BRQC5"
 });
+// App Check: ضع مفتاح reCAPTCHA v3 هنا (من Firebase ← App Check ← Apps)
+const APPCHECK_SITE_KEY = "";
+try{
+  const {initializeAppCheck,ReCaptchaV3Provider}=await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check.js");
+  // وضع التطوير: على localhost أو بفتح الصفحة مع ?appcheck_debug لتوليد رمز تصحيح يظهر في Console
+  const dbg=["localhost","127.0.0.1"].includes(location.hostname)||new URLSearchParams(location.search).has("appcheck_debug");
+  if(dbg) self.FIREBASE_APPCHECK_DEBUG_TOKEN=true;
+  if(APPCHECK_SITE_KEY||dbg) initializeAppCheck(app,{provider:new ReCaptchaV3Provider(APPCHECK_SITE_KEY||"debug"),isTokenAutoRefreshEnabled:true});
+}catch(e){console.error("App Check:",e)}
 const auth = getAuth(app), db = getFirestore(app);
 let model=null, aiChat=null;
 try{
   const {getAI,getGenerativeModel,GoogleAIBackend}=await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-ai.js");
   model=getGenerativeModel(getAI(app,{backend:new GoogleAIBackend()}),{
-    model:"gemini-2.5-flash",
+    model:"gemini-4-hydrogen",
     systemInstruction:"أنت مساعد ذكي داخل تطبيق تواصل YXA. أجب بالعربية بإيجاز ووضوح."
   });
   aiChat=model.startChat();
