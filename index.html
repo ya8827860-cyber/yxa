@@ -16,7 +16,7 @@
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);font-size:14px}
 button,input,textarea{font:inherit}
 .screen,.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:1rem;overflow:auto}
-.screen{z-index:40;background:var(--bg)}.modal{z-index:50;background:rgb(0 0 0/85%)}
+.screen{z-index:40;background:var(--bg)}.modal{z-index:50;background:rgba(0,0,0,.85)}
 .card{width:100%;padding:1.1rem;background:var(--card);border:1px solid var(--border);border-radius:1.25rem}
 .stack>*+*{margin-top:.8rem}
 .row{display:flex;align-items:center;gap:.55rem}.sp{justify-content:space-between}
@@ -195,30 +195,39 @@ const app = initializeApp({
   appId:"1:822764592315:web:12c11fc8ec855405cc1d9e",
   measurementId:"G-HJLW4BRQC5"
 });
+
 // App Check: ضع مفتاح reCAPTCHA v3 هنا (من Firebase ← App Check ← Apps)
 const APPCHECK_SITE_KEY = "";
 try{
-  const {initializeAppCheck,ReCaptchaV3Provider}=await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js");
-  // وضع التطوير: على localhost أو بفتح الصفحة مع ?appcheck_debug لتوليد رمز تصحيح يظهر في Console
   const dbg=["localhost","127.0.0.1"].includes(location.hostname)||new URLSearchParams(location.search).has("appcheck_debug");
   if(dbg) self.FIREBASE_APPCHECK_DEBUG_TOKEN=true;
-  if(APPCHECK_SITE_KEY||dbg) initializeAppCheck(app,{provider:new ReCaptchaV3Provider(APPCHECK_SITE_KEY||"debug"),isTokenAutoRefreshEnabled:true});
+  if(APPCHECK_SITE_KEY){
+    const {initializeAppCheck,ReCaptchaV3Provider}=await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js");
+    initializeAppCheck(app,{provider:new ReCaptchaV3Provider(APPCHECK_SITE_KEY),isTokenAutoRefreshEnabled:true});
+  }
 }catch(e){console.error("App Check:",e)}
+
 const auth = getAuth(app), db = getFirestore(app);
+const AI_MODEL="gemini-2.5-flash", SYS="أنت مساعد ذكي داخل تطبيق تواصل YXA. أجب بالعربية بإيجاز ووضوح.";
 let model=null, aiChat=null;
 try{
-  const USE_AGENT_PLATFORM=true; // false = Gemini Developer API (الطبقة المجانية)
-  const {getAI,getGenerativeModel,GoogleAIBackend,AgentPlatformBackend}=await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-ai.js");
-  model=getGenerativeModel(getAI(app,{backend:USE_AGENT_PLATFORM?new AgentPlatformBackend():new GoogleAIBackend()}),{
-    model:"gemini-4-hydrogen",
-    systemInstruction:"أنت مساعد ذكي داخل تطبيق تواصل YXA. أجب بالعربية بإيجاز ووضوح."
+  const {getAI,getGenerativeModel,GoogleAIBackend}=await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-ai.js");
+  model=getGenerativeModel(getAI(app,{backend:new GoogleAIBackend()}),{
+    model:AI_MODEL,
+    systemInstruction:SYS
   });
   aiChat=model.startChat();
-}catch(e){ console.error(e); }
+}catch(e){console.error("Firebase AI:",e)}
 
 const $ = id => document.getElementById(id);
 const el = (tag,cls="",text=null)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==null)n.textContent=String(text);return n};
 const toast = t=>{const n=el("div","toast",t);$("toasts").append(n);setTimeout(()=>n.remove(),3500)};
+const busy = async (btn, fn) => {
+  if(btn.disabled) return;
+  btn.disabled = true;
+  try{ return await fn(); }
+  finally{ btn.disabled = false; }
+};
 const errs = {
   "auth/unauthorized-domain":"هذا النطاق غير مضاف في Authentication ← Settings ← Authorized domains.",
   "auth/popup-closed-by-user":"أُغلقت نافذة الدخول.","auth/cancelled-popup-request":"أُلغيت نافذة الدخول السابقة.",
@@ -235,7 +244,11 @@ const fmt = ts => { try { return ts?.toDate ? ts.toDate().toLocaleString("ar-SA"
 const read = d => ({id:d.id,...d.data({serverTimestamps:"estimate"})});
 
 // المظهر
-const setTheme = t=>{document.documentElement.classList.toggle("dark",t==="dark");try{localStorage.setItem("yxa_theme",t)}catch{}};
+const setTheme = t=>{
+  document.documentElement.classList.toggle("dark",t==="dark");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content",t==="dark"?"#000000":"#f5f5f5");
+  try{localStorage.setItem("yxa_theme",t)}catch{}
+};
 try{setTheme(localStorage.getItem("yxa_theme")||"dark")}catch{setTheme("dark")}
 $("b-theme").onclick = ()=>setTheme(document.documentElement.classList.contains("dark")?"light":"dark");
 
@@ -244,6 +257,7 @@ let chatUnsub=null, chatFriend=null, pendingDel=null;
 const openModal = id=>{$(id).hidden=false};
 const closeModals = ()=>{document.querySelectorAll(".modal").forEach(m=>m.hidden=true);chatUnsub?.();chatUnsub=null;chatFriend=null};
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModals);
+document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)closeModals()}));
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModals()});
 const copy = async t=>{try{await navigator.clipboard.writeText(t);toast("تم النسخ: "+t)}catch{toast("انسخ يدوياً: "+t)}};
 $("b-contact").onclick = ()=>openModal("m-contact");
@@ -260,7 +274,7 @@ $("copy-mail").onclick = ()=>copy("ya8827860@gmail.com");
 });
 
 // الحالة
-let me=null, user=null, posts=[], unsubs=[];
+let me=null, user=null, posts=[], unsubs=[], hist=[];
 
 function paintProfile(){
   $("u-yxa").textContent=me.yxaId; $("u-name").textContent=me.name;
@@ -291,9 +305,10 @@ async function ensureProfile(u){
 function renderStories(items){
   const box=$("stories"); box.replaceChildren();
   items.forEach(s=>{
+    const txt=String(s.text||"");
     const b=el("button","btn story"); b.type="button";
-    b.append(el("span","small muted",s.author||"عضو"),el("span","",String(s.text||"").slice(0,30)));
-    b.onclick=()=>{$("s-by").textContent=s.author||"عضو";$("s-tx").textContent=s.text||"";openModal("m-story")};
+    b.append(el("span","small muted",s.author||"عضو"),el("span","",txt.length>30?txt.slice(0,30)+"…":txt));
+    b.onclick=()=>{$("s-by").textContent=s.author||"عضو";$("s-tx").textContent=txt;openModal("m-story")};
     box.append(b);
   });
   if(!items.length) box.append(el("span","small muted","لا توجد ستوريات. انشر أول ستوري."));
@@ -338,9 +353,15 @@ function listen(){
 const authErr = t=>{$("auth-err").textContent=t||""};
 const lock = v=>document.querySelectorAll(".provider,#em-in,#em-up").forEach(b=>b.disabled=v);
 onAuthStateChanged(auth, async u=>{
-  unsubs.forEach(x=>x()); unsubs=[]; chatUnsub?.(); chatUnsub=null;
+  unsubs.forEach(x=>x()); unsubs=[]; closeModals();
   lock(false); $("boot").textContent="سجّل الدخول للمتابعة.";
-  if(!u){me=user=null;$("app").hidden=true;$("auth").hidden=false;return}
+  if(!u){
+    me=user=null; posts=[]; hist=[];
+    if(model) aiChat=model.startChat();
+    ["posts","stories","f-list","ai-feed"].forEach(id=>$(id).replaceChildren());
+    $("app").hidden=true; $("auth").hidden=false;
+    return;
+  }
   try{
     user=u; me=await ensureProfile(u); paintProfile();
     $("auth").hidden=true; $("app").hidden=false; listen();
@@ -367,6 +388,7 @@ async function emailAuth(create){
 }
 $("em-in").onclick=()=>emailAuth(false);
 $("em-up").onclick=()=>emailAuth(true);
+$("em").onkeydown=e=>{if(e.key==="Enter")$("pw").focus()};
 $("pw").onkeydown=e=>{if(e.key==="Enter")emailAuth(false)};
 $("reset").onclick=async()=>{
   const email=$("em").value.trim();
@@ -376,31 +398,32 @@ $("reset").onclick=async()=>{
 $("b-out").onclick=()=>signOut(auth).catch(e=>toast(errText(e)));
 
 // المنشورات
-$("post-add").onclick=async()=>{
+$("post-add").onclick=()=>busy($("post-add"),async()=>{
   const text=$("post-in").value.trim(); if(!text) return;
   try{
     await addDoc(collection(db,"posts"),{uid:me.uid,author:me.name,text,likes:[],ts:serverTimestamp()});
     $("post-in").value=""; toast("تم النشر.");
   }catch(e){toast(errText(e))}
-};
-$("del-yes").onclick=async()=>{
+});
+$("del-yes").onclick=()=>busy($("del-yes"),async()=>{
   const id=pendingDel; pendingDel=null; closeModals(); if(!id) return;
   try{await deleteDoc(doc(db,"posts",id));toast("تم حذف المنشور.")}catch(e){toast(errText(e))}
-};
+});
 
 // الستوريات
-$("st-add").onclick=()=>{$("st-in").value="";openModal("m-add-story")};
-$("st-save").onclick=async()=>{
+$("st-add").onclick=()=>{$("st-in").value="";openModal("m-add-story");$("st-in").focus()};
+$("st-save").onclick=()=>busy($("st-save"),async()=>{
   const text=$("st-in").value.trim(); if(!text) return;
   try{
     await addDoc(collection(db,"stories"),{uid:me.uid,author:me.name,text,ts:serverTimestamp()});
     closeModals(); toast("تم نشر الستوري.");
   }catch(e){toast(errText(e))}
-};
+});
 
 // الأصدقاء
-$("f-add").onclick=async()=>{
-  const code=$("f-in").value.trim().toUpperCase(); if(!code) return;
+$("f-add").onclick=()=>busy($("f-add"),async()=>{
+  let code=$("f-in").value.trim().toUpperCase(); if(!code) return;
+  if(/^\d{6}$/.test(code)) code="YXA-"+code;
   try{
     const idSnap=await getDoc(doc(db,"yxaIds",code));
     if(!idSnap.exists()) return toast("لم يتم العثور على مستخدم بهذا الرقم.");
@@ -410,14 +433,15 @@ $("f-add").onclick=async()=>{
     await setDoc(doc(db,"users",me.uid,"friends",uid),{name:u.data()?.name||"عضو",yxaId:code});
     $("f-in").value=""; toast("تمت إضافة الصديق.");
   }catch(e){toast(errText(e))}
-};
+});
+$("f-in").onkeydown=e=>{if(e.key==="Enter")$("f-add").click()};
 
 // المحادثة
 const room=(a,b)=>[a,b].sort().join("_");
 function openChat(f){
   closeModals(); chatFriend=f;
   $("c-name").textContent=f.name||"عضو"; $("c-id").textContent=f.yxaId||""; $("c-in").value="";
-  openModal("m-chat");
+  openModal("m-chat"); $("c-in").focus();
   chatUnsub=onSnapshot(query(collection(db,"chats",room(me.uid,f.id),"messages"),orderBy("ts","desc"),limit(100)),s=>{
     const feed=$("c-feed"); feed.replaceChildren();
     s.docs.map(read).reverse().forEach(m=>feed.append(el("div","bubble "+(m.senderId===me.uid?"me":"other"),m.text||"")));
@@ -427,22 +451,24 @@ function openChat(f){
 async function sendChat(){
   const text=$("c-in").value.trim(); if(!text||!chatFriend) return;
   $("c-in").value="";
-  try{await addDoc(collection(db,"chats",room(me.uid,chatFriend.id),"messages"),{senderId:me.uid,text,ts:serverTimestamp()})}
-  catch(e){$("c-in").value=text;toast(errText(e))}
+  await busy($("c-send"),async()=>{
+    try{await addDoc(collection(db,"chats",room(me.uid,chatFriend.id),"messages"),{senderId:me.uid,text,ts:serverTimestamp()})}
+    catch(e){$("c-in").value=text;toast(errText(e))}
+  });
 }
 $("c-send").onclick=sendChat;
 $("c-in").onkeydown=e=>{if(e.key==="Enter")sendChat()};
 
 // الحساب
-$("a-save").onclick=async()=>{
+$("a-save").onclick=()=>busy($("a-save"),async()=>{
   const name=$("a-name").value.trim(); if(!name) return;
   try{await updateDoc(doc(db,"users",me.uid),{name});me.name=name;paintProfile();toast("تم تحديث الاسم.")}
   catch(e){toast(errText(e))}
-};
+});
+$("a-name").onkeydown=e=>{if(e.key==="Enter")$("a-save").click()};
 $("a-copy").onclick=()=>copy(me.yxaId);
 
 // الذكاء الاصطناعي: مفتاح المستخدم إن وُجد، وإلا Firebase AI Logic
-const AI_MODEL="gemini-4-hydrogen", SYS="أنت مساعد ذكي داخل تطبيق تواصل YXA. أجب بالعربية بإيجاز ووضوح.";
 let userKey=""; try{userKey=localStorage.getItem("yxa_gkey")||""}catch{}
 $("g-key").value=userKey;
 const paintAiNote=()=>{$("ai-note").textContent=userKey?"يعمل بمفتاحك الشخصي (محفوظ في هذا المتصفح فقط).":(model?"يعمل عبر Firebase AI Logic.":"أدخل مفتاح Gemini API أو فعّل Firebase AI Logic.")};
@@ -452,7 +478,6 @@ $("g-save").onclick=()=>{
   try{userKey?localStorage.setItem("yxa_gkey",userKey):localStorage.removeItem("yxa_gkey")}catch{return toast("تعذّر الحفظ في هذا المتصفح.")}
   paintAiNote(); toast(userKey?"تم حفظ المفتاح.":"تم حذف المفتاح.");
 };
-let hist=[];
 async function viaKey(prompt,keep){
   const contents=[...(keep?hist:[]),{role:"user",parts:[{text:prompt}]}];
   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent`,{
@@ -473,25 +498,32 @@ async function askAI(prompt,keep){
   return keep ? (await aiChat.sendMessage(prompt)).response.text() : (await model.generateContent(prompt)).response.text().trim();
 }
 const aiErr=e=>toast(userKey?(e?.message||String(e)):(/403|not.*enabled/i.test(e?.message||"")?"فعّل Firebase AI Logic من لوحة Firebase، أو أدخل مفتاحك.":errText(e)));
-$("ai-send").onclick=async()=>{
+$("ai-send").onclick=()=>busy($("ai-send"),async()=>{
   const p=$("ai-in").value.trim(); if(!p) return;
-  $("ai-in").value=""; $("ai-send").disabled=true;
-  $("ai-feed").append(el("div","bubble me",p));
+  $("ai-in").value="";
+  const feed=$("ai-feed");
+  feed.append(el("div","bubble me",p));
+  const wait=el("div","bubble other muted","جارٍ التفكير…");
+  feed.append(wait);
+  feed.scrollTop=feed.scrollHeight;
   try{
-    $("ai-feed").append(el("div","bubble other",await askAI(p,true)));
-    $("ai-feed").scrollTop=$("ai-feed").scrollHeight;
-  }catch(e){aiErr(e)}finally{$("ai-send").disabled=false}
-};
+    wait.textContent=await askAI(p,true);
+    wait.classList.remove("muted");
+  }catch(e){
+    wait.remove();
+    aiErr(e);
+  }
+  feed.scrollTop=feed.scrollHeight;
+});
 $("ai-in").onkeydown=e=>{if(e.key==="Enter")$("ai-send").click()};
-$("post-ai").onclick=async()=>{
+$("post-ai").onclick=()=>busy($("post-ai"),async()=>{
   const d=$("post-in").value.trim();
   if(!d) return toast("اكتب مسودة أولاً.");
-  $("post-ai").disabled=true;
   try{
     const t=await askAI("أعد صياغة المنشور التالي بأسلوب واضح وجذاب بالعربية دون مقدمات:\n"+d,false);
     if(t) $("post-in").value=t.slice(0,1000);
-  }catch(e){aiErr(e)}finally{$("post-ai").disabled=false}
-};
+  }catch(e){aiErr(e)}
+});
 </script>
 </body>
 </html>
