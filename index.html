@@ -110,6 +110,7 @@ button,input,textarea{font:inherit}
     <div class="card stack">
       <b>🧠 الذكاء الاصطناعي</b>
       <p id="ai-note" class="small muted">يعمل عبر Firebase AI Logic (Gemini).</p>
+      <div class="row"><input id="g-key" type="password" class="inp mono" dir="ltr" placeholder="مفتاح Gemini API (اختياري)" autocomplete="off"><button class="btn primary" id="g-save">حفظ</button></div>
       <div id="ai-feed" class="feed" aria-live="polite" style="min-height:220px;max-height:380px"></div>
       <div class="row"><input id="ai-in" class="inp" placeholder="اكتب سؤالك…"><button class="btn primary" id="ai-send">إرسال</button></div>
     </div>
@@ -180,9 +181,9 @@ if(location.protocol==="file:")document.addEventListener("DOMContentLoaded",()=>
 setTimeout(()=>{if(!window.__yxa)document.getElementById("boot").textContent="⚠️ تعذّر تحميل Firebase. تحقق من الإنترنت أو افتح Console (F12) لرؤية الخطأ."},6000);
 </script>
 <script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import {getAuth,onAuthStateChanged,signInWithPopup,GoogleAuthProvider,GithubAuthProvider,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import {getFirestore,collection,doc,getDoc,setDoc,addDoc,updateDoc,deleteDoc,query,orderBy,limit,where,onSnapshot,serverTimestamp,arrayUnion,arrayRemove,runTransaction,Timestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInWithPopup,GoogleAuthProvider,GithubAuthProvider,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import {getFirestore,collection,doc,getDoc,setDoc,addDoc,updateDoc,deleteDoc,query,orderBy,limit,where,onSnapshot,serverTimestamp,arrayUnion,arrayRemove,runTransaction,Timestamp} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 window.__yxa=1;
 
 const app = initializeApp({
@@ -197,7 +198,7 @@ const app = initializeApp({
 // App Check: ضع مفتاح reCAPTCHA v3 هنا (من Firebase ← App Check ← Apps)
 const APPCHECK_SITE_KEY = "";
 try{
-  const {initializeAppCheck,ReCaptchaV3Provider}=await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check.js");
+  const {initializeAppCheck,ReCaptchaV3Provider}=await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js");
   // وضع التطوير: على localhost أو بفتح الصفحة مع ?appcheck_debug لتوليد رمز تصحيح يظهر في Console
   const dbg=["localhost","127.0.0.1"].includes(location.hostname)||new URLSearchParams(location.search).has("appcheck_debug");
   if(dbg) self.FIREBASE_APPCHECK_DEBUG_TOKEN=true;
@@ -206,8 +207,9 @@ try{
 const auth = getAuth(app), db = getFirestore(app);
 let model=null, aiChat=null;
 try{
-  const {getAI,getGenerativeModel,GoogleAIBackend}=await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-ai.js");
-  model=getGenerativeModel(getAI(app,{backend:new GoogleAIBackend()}),{
+  const USE_AGENT_PLATFORM=true; // false = Gemini Developer API (الطبقة المجانية)
+  const {getAI,getGenerativeModel,GoogleAIBackend,AgentPlatformBackend}=await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-ai.js");
+  model=getGenerativeModel(getAI(app,{backend:USE_AGENT_PLATFORM?new AgentPlatformBackend():new GoogleAIBackend()}),{
     model:"gemini-4-hydrogen",
     systemInstruction:"أنت مساعد ذكي داخل تطبيق تواصل YXA. أجب بالعربية بإيجاز ووضوح."
   });
@@ -439,16 +441,44 @@ $("a-save").onclick=async()=>{
 };
 $("a-copy").onclick=()=>copy(me.yxaId);
 
-// الذكاء الاصطناعي (Firebase AI Logic)
-const aiErr=e=>toast(/403|not.*enabled|API/i.test(e?.message||"")?"فعّل Firebase AI Logic وواجهة Gemini من لوحة Firebase.":errText(e));
+// الذكاء الاصطناعي: مفتاح المستخدم إن وُجد، وإلا Firebase AI Logic
+const AI_MODEL="gemini-4-hydrogen", SYS="أنت مساعد ذكي داخل تطبيق تواصل YXA. أجب بالعربية بإيجاز ووضوح.";
+let userKey=""; try{userKey=localStorage.getItem("yxa_gkey")||""}catch{}
+$("g-key").value=userKey;
+const paintAiNote=()=>{$("ai-note").textContent=userKey?"يعمل بمفتاحك الشخصي (محفوظ في هذا المتصفح فقط).":(model?"يعمل عبر Firebase AI Logic.":"أدخل مفتاح Gemini API أو فعّل Firebase AI Logic.")};
+paintAiNote();
+$("g-save").onclick=()=>{
+  userKey=$("g-key").value.trim();
+  try{userKey?localStorage.setItem("yxa_gkey",userKey):localStorage.removeItem("yxa_gkey")}catch{return toast("تعذّر الحفظ في هذا المتصفح.")}
+  paintAiNote(); toast(userKey?"تم حفظ المفتاح.":"تم حذف المفتاح.");
+};
+let hist=[];
+async function viaKey(prompt,keep){
+  const contents=[...(keep?hist:[]),{role:"user",parts:[{text:prompt}]}];
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-goog-api-key":userKey},
+    body:JSON.stringify({contents,systemInstruction:{parts:[{text:SYS}]}})
+  });
+  const d=await r.json();
+  if(!r.ok) throw new Error(d?.error?.message||"فشل طلب Gemini");
+  const t=(d?.candidates?.[0]?.content?.parts||[]).map(x=>x.text||"").join("").trim();
+  if(!t) throw new Error("لم يرد النموذج بنص.");
+  if(keep) hist=[...contents,{role:"model",parts:[{text:t}]}].slice(-20);
+  return t;
+}
+async function askAI(prompt,keep){
+  if(userKey) return viaKey(prompt,keep);
+  if(!model) throw new Error("أدخل مفتاح Gemini في تبويب الذكاء أو فعّل Firebase AI Logic.");
+  return keep ? (await aiChat.sendMessage(prompt)).response.text() : (await model.generateContent(prompt)).response.text().trim();
+}
+const aiErr=e=>toast(userKey?(e?.message||String(e)):(/403|not.*enabled/i.test(e?.message||"")?"فعّل Firebase AI Logic من لوحة Firebase، أو أدخل مفتاحك.":errText(e)));
 $("ai-send").onclick=async()=>{
   const p=$("ai-in").value.trim(); if(!p) return;
-  if(!aiChat) return toast("خدمة الذكاء غير متاحة حالياً.");
   $("ai-in").value=""; $("ai-send").disabled=true;
   $("ai-feed").append(el("div","bubble me",p));
   try{
-    const r=await aiChat.sendMessage(p);
-    $("ai-feed").append(el("div","bubble other",r.response.text()));
+    $("ai-feed").append(el("div","bubble other",await askAI(p,true)));
     $("ai-feed").scrollTop=$("ai-feed").scrollHeight;
   }catch(e){aiErr(e)}finally{$("ai-send").disabled=false}
 };
@@ -456,11 +486,10 @@ $("ai-in").onkeydown=e=>{if(e.key==="Enter")$("ai-send").click()};
 $("post-ai").onclick=async()=>{
   const d=$("post-in").value.trim();
   if(!d) return toast("اكتب مسودة أولاً.");
-  if(!model) return toast("خدمة الذكاء غير متاحة حالياً.");
   $("post-ai").disabled=true;
   try{
-    const r=await model.generateContent("أعد صياغة المنشور التالي بأسلوب واضح وجذاب بالعربية دون مقدمات:\n"+d);
-    const t=r.response.text().trim(); if(t) $("post-in").value=t.slice(0,1000);
+    const t=await askAI("أعد صياغة المنشور التالي بأسلوب واضح وجذاب بالعربية دون مقدمات:\n"+d,false);
+    if(t) $("post-in").value=t.slice(0,1000);
   }catch(e){aiErr(e)}finally{$("post-ai").disabled=false}
 };
 </script>
