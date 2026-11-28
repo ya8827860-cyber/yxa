@@ -175,11 +175,15 @@ button,input,textarea{font:inherit}
   </div>
 </div>
 
+<script>
+if(location.protocol==="file:")document.addEventListener("DOMContentLoaded",()=>{document.getElementById("boot").textContent="⚠️ افتح الصفحة من رابط https أو localhost، وليس من ملف محلي."});
+setTimeout(()=>{if(!window.__yxa)document.getElementById("boot").textContent="⚠️ تعذّر تحميل Firebase. تحقق من الإنترنت أو افتح Console (F12) لرؤية الخطأ."},6000);
+</script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,onAuthStateChanged,signInWithPopup,GoogleAuthProvider,GithubAuthProvider,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import {getFirestore,collection,doc,getDoc,setDoc,addDoc,updateDoc,deleteDoc,query,orderBy,limit,where,onSnapshot,serverTimestamp,arrayUnion,arrayRemove,runTransaction,Timestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import {getAI,getGenerativeModel,GoogleAIBackend} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-ai.js";
+window.__yxa=1;
 
 const app = initializeApp({
   apiKey:"AIzaSyDfDU6HT0mtAbiLlcuBXxrysTmHNI-rFEo",
@@ -191,11 +195,15 @@ const app = initializeApp({
   measurementId:"G-HJLW4BRQC5"
 });
 const auth = getAuth(app), db = getFirestore(app);
-const model = getGenerativeModel(getAI(app,{backend:new GoogleAIBackend()}),{
-  model:"gemini-2.5-flash",
-  systemInstruction:"أنت مساعد ذكي داخل تطبيق تواصل YXA. أجب بالعربية بإيجاز ووضوح."
-});
-let aiChat = model.startChat();
+let model=null, aiChat=null;
+try{
+  const {getAI,getGenerativeModel,GoogleAIBackend}=await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-ai.js");
+  model=getGenerativeModel(getAI(app,{backend:new GoogleAIBackend()}),{
+    model:"gemini-2.5-flash",
+    systemInstruction:"أنت مساعد ذكي داخل تطبيق تواصل YXA. أجب بالعربية بإيجاز ووضوح."
+  });
+  aiChat=model.startChat();
+}catch(e){ console.error(e); }
 
 const $ = id => document.getElementById(id);
 const el = (tag,cls="",text=null)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==null)n.textContent=String(text);return n};
@@ -326,7 +334,9 @@ onAuthStateChanged(auth, async u=>{
     user=u; me=await ensureProfile(u); paintProfile();
     $("auth").hidden=true; $("app").hidden=false; listen();
   }catch(e){
-    toast(errText(e)); await signOut(auth);
+    console.error(e);
+    await signOut(auth);
+    authErr("تم تسجيل الدخول لكن تعذّر تجهيز الحساب: "+errText(e)+" (تأكد من إنشاء قاعدة Firestore ونشر القواعد).");
   }
 });
 
@@ -424,6 +434,7 @@ $("a-copy").onclick=()=>copy(me.yxaId);
 const aiErr=e=>toast(/403|not.*enabled|API/i.test(e?.message||"")?"فعّل Firebase AI Logic وواجهة Gemini من لوحة Firebase.":errText(e));
 $("ai-send").onclick=async()=>{
   const p=$("ai-in").value.trim(); if(!p) return;
+  if(!aiChat) return toast("خدمة الذكاء غير متاحة حالياً.");
   $("ai-in").value=""; $("ai-send").disabled=true;
   $("ai-feed").append(el("div","bubble me",p));
   try{
@@ -436,6 +447,7 @@ $("ai-in").onkeydown=e=>{if(e.key==="Enter")$("ai-send").click()};
 $("post-ai").onclick=async()=>{
   const d=$("post-in").value.trim();
   if(!d) return toast("اكتب مسودة أولاً.");
+  if(!model) return toast("خدمة الذكاء غير متاحة حالياً.");
   $("post-ai").disabled=true;
   try{
     const r=await model.generateContent("أعد صياغة المنشور التالي بأسلوب واضح وجذاب بالعربية دون مقدمات:\n"+d);
